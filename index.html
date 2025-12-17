@@ -286,9 +286,14 @@
                     
                     const badges = i.tag.split(/\s+/).map(t => `<span class="tag-badge">${t}</span>`).join('');
                     div.innerHTML = `
-                        <div style="font-weight:900; font-size:1.2rem; margin-bottom:8px;">${i.name}</div>
-                        <div>${badges}</div>
-                    `;
+    <div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--ak-yellow);">
+        [ WARNING: MISSION LIMITATION ]
+    </div>
+    <div style="font-weight:900; font-size:1.2rem; margin: 5px 0;">
+        ${i.name}
+    </div>
+    <div>${badges}</div>
+`;
                     resContainer.appendChild(div);
                 }, idx * 100);
             });
@@ -296,4 +301,5 @@
     </script>
 </body>
 </html>
+
 
