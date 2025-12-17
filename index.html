@@ -138,6 +138,119 @@
         updateSidebarUI();
     }
 
-    // (其餘 renderResultGrid, toggleLockLocal, switchSlot 等函數保持 9.2 原樣不變)
+    function renderResultGrid(items, animate) {
+        const zone = document.getElementById('result-zone');
+        zone.innerHTML = '';
+        items.forEach((item, idx) => {
+            const isLocked = state_slots[current_slot_idx].some(s => s.row === item.row);
+            const card = document.createElement('div');
+            card.className = `contract-card ${isLocked ? 'locked' : ''} ${animate ? 'animate-in' : ''}`;
+            card.style.animationDelay = `${idx * 0.05}s`;
+            card.innerHTML = `
+
+                <div style="font-size:10px; color:#555;">>> ROW-${item.row} <span class="lock-indicator">${isLocked ? '[LOCKED]' : ''}</span></div>
+
+                <div style="font-weight:bold; margin:10px 0; min-height:2.4em;">${item.name}</div>
+
+                <div style="font-size:10px; color:var(--ak-cyan);">TAGS: ${item.tag}</div>
+
+            `;
+
+            card.onclick = () => toggleLockLocal(item, card);
+            zone.appendChild(card);
+
+        });
+
+    }
+    function toggleLockLocal(item, card) {
+        let currentLocked = state_slots[current_slot_idx];
+        const idx = currentLocked.findIndex(l => l.row === item.row);
+        const indicator = card.querySelector('.lock-indicator');
+        if(idx > -1) {
+            currentLocked.splice(idx, 1);
+            card.classList.remove('locked');
+            indicator.innerText = '';
+        } else {
+            currentLocked.push(item);
+            card.classList.add('locked');
+            indicator.innerText = '[LOCKED]';
+        }
+        updateSidebarUI();
+    }
+    function updateSidebarUI() {
+        const list = document.getElementById('sidebar-list');
+        const riskFill = document.getElementById('risk-fill');
+        list.innerHTML = '';
+
+        let total = 0;
+
+        state_slots[current_slot_idx].sort((a,b)=>a.diff-b.diff).forEach(i => {
+
+            total += i.diff;
+
+            const d = document.createElement('div');
+
+            d.style = "font-size:11px; padding:5px 0; border-bottom:1px solid #222;";
+
+            d.innerHTML = `<span style="color:var(--ak-red)">[LV.${i.diff}]</span> ${i.name}`;
+
+            list.appendChild(d);
+
+        });
+
+        document.getElementById('total-risk').innerText = total.toString().padStart(2, '0');
+
+        riskFill.style.width = Math.min(100, (total / 30) * 100) + "%";
+
+    }
+
+
+
+    function switchSlot(idx) {
+
+        current_slot_idx = idx;
+
+        document.querySelectorAll('.slot-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+
+        updateSidebarUI();
+
+        renderResultGrid(current_results, false);
+
+    }
+
+
+
+    function acquireTarget() {
+
+        if(db_locations.length === 0) return;
+
+        const roll = db_locations[Math.floor(Math.random() * db_locations.length)];
+
+        document.getElementById('target-display').innerText = roll;
+
+    }
+
+
+
+    function toggleReportMode() { document.body.classList.toggle('report-mode'); }
+
+    function goBack() {
+
+        document.getElementById('screen-draw').classList.remove('active');
+
+        document.getElementById('screen-diff').classList.add('active');
+
+        document.getElementById('back-zone').style.display = 'none';
+
+        current_results = [];
+
+    }
+
+</script>
+
+</body>
+
+</html>
+
 
 
