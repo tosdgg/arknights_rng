@@ -3,29 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PRTS // Recruitment Terminal</title>
+    <title>PRTS // Recruitment Terminal v3.5</title>
     <style>
-		/* 互斥選擇狀態 - 變為黃色 */
-		.tag-btn.exclusive {
-			background: var(--ak-yellow) !important;
-			color: #000 !important;
-			box-shadow: 0 0 12px rgba(255, 205, 0, 0.6);
-		}
-
-		/* 在黃色 Tag 上方加個小標籤提示 */
-		
-		.tag-btn.exclusive::before {
-			content: 'UNIQUE';
-			position: absolute;
-			top: -12px;
-			left: 0;
-			font-size: 8px;
-			background: var(--ak-yellow);
-			color: #000;
-			padding: 0 2px;
-		}
-		
-        /* --- Arknights Theme Variables --- */
         :root {
             --bg-color: #1a1a1a;
             --panel-bg: rgba(30, 30, 30, 0.95);
@@ -34,610 +13,295 @@
             --ak-white: #f5f5f5;
             --ak-gray: #888;
             --ak-dark: #111;
-            --font-main: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             --font-mono: 'Courier New', Courier, monospace;
         }
 
         body {
-            margin: 0;
-            padding: 0;
+            margin: 0; padding: 0;
             background-color: var(--bg-color);
             color: var(--ak-white);
-            font-family: var(--font-main);
-            overflow: hidden;
-            background-image: 
-                linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8)),
-                repeating-linear-gradient(45deg, #222 0, #222 1px, transparent 0, transparent 50%);
-            background-size: 30px 30px;
+            font-family: sans-serif;
             height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            display: flex; justify-content: center; align-items: center;
+            background-image: radial-gradient(#333 1px, transparent 1px);
+            background-size: 30px 30px;
         }
 
-        /* --- Layout --- */
         .container {
-            width: 90%;
-            max-width: 1000px;
-            height: 85vh;
-            position: relative;
-            border: 1px solid #444;
+            width: 95%; max-width: 1100px; height: 85vh;
             background: var(--panel-bg);
-            box-shadow: 0 0 30px rgba(0,0,0,0.9);
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* Header */
-        .header-bar {
-            height: 60px;
-            background: var(--ak-dark);
-            border-bottom: 3px solid var(--ak-yellow);
-            display: flex;
-            align-items: center;
-            padding: 0 30px;
-            justify-content: space-between;
-        }
-
-        .logo-text {
-            font-family: var(--font-mono);
-            font-weight: 900;
-            letter-spacing: 2px;
-            font-size: 1.2rem;
-        }
-
-        /* --- Screens --- */
-        .screen {
-            flex: 1;
-            padding: 40px;
-            display: none;
-            flex-direction: column;
-            animation: fadeIn 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+            border: 1px solid #444;
+            display: flex; flex-direction: column;
             position: relative;
-            overflow-y: auto; /* Allow scroll if content is tall */
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
         }
 
+        .header-bar {
+            height: 50px; background: #000; border-bottom: 3px solid var(--ak-yellow);
+            display: flex; align-items: center; padding: 0 20px; justify-content: space-between;
+        }
+
+        .screen { padding: 40px; display: none; flex-direction: column; flex: 1; overflow-y: auto; }
         .screen.active { display: flex; }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+        /* Buttons & Tags */
+        .diff-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin-top: 50px; }
+        .ak-btn {
+            background: #222; border: 1px solid #444; color: #fff; padding: 30px;
+            cursor: pointer; transition: 0.2s; text-align: center; font-family: var(--font-mono);
         }
+        .ak-btn:hover { background: var(--ak-yellow); color: #000; }
 
-        /* --- Difficulty Page --- */
-        h1 {
-            text-transform: uppercase;
-            font-size: 2rem;
-            border-left: 6px solid var(--ak-yellow);
-            padding-left: 20px;
-            margin: 0 0 30px 0;
-            letter-spacing: 2px;
-        }
-
-        .diff-grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 15px;
-            margin: auto 0;
-        }
-
-        .diff-card {
-            height: 220px;
-            background: rgba(255,255,255,0.03);
-            border: 1px solid #444;
-            color: var(--ak-white);
-            cursor: pointer;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            transition: 0.2s;
-            clip-path: polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px);
-            position: relative;
-        }
-
-        .diff-card:hover {
-            background: var(--ak-yellow);
-            color: var(--ak-dark);
-            border-color: var(--ak-yellow);
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(255, 205, 0, 0.2);
-        }
-
-        .diff-num { font-size: 3.5rem; font-weight: 900; opacity: 0.2; }
-        .diff-label { font-size: 1.2rem; font-weight: bold; margin-top: 10px; text-transform: uppercase; }
-
-        /* --- Selector Page (Recruitment Style) --- */
-        .section-label {
-            font-family: var(--font-mono);
-            color: var(--ak-gray);
-            font-size: 0.8rem;
-            margin-bottom: 10px;
-            display: block;
-        }
-
-        /* Tag System */
-        .tag-area {
-            background: rgba(0,0,0,0.3);
-            padding: 20px;
-            border: 1px solid #444;
-            margin-bottom: 25px;
-        }
-
-        .tag-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
+        .tag-grid { display: flex; flex-wrap: wrap; gap: 10px; margin: 20px 0; }
         .tag-btn {
-            background: #333;
-            color: #ccc;
-            border: none;
-            padding: 8px 16px;
-            font-family: var(--font-main);
-            font-weight: bold;
-            font-size: 0.9rem;
-            cursor: pointer;
-            transition: 0.1s;
-            position: relative;
-            min-width: 80px;
-            text-align: center;
+            background: #333; color: #ccc; border: none; padding: 10px 20px;
+            cursor: pointer; font-weight: bold; position: relative; transition: 0.1s;
         }
         
-        /* Arknights Selected Tag Style */
-        .tag-btn:hover { background: #444; }
+        /* 白色選取狀態 */
+        .tag-btn.active { background: var(--ak-white); color: #000; }
         
-        .tag-btn.active {
-            background: var(--ak-white);
-            color: #000;
-            box-shadow: 0 0 8px rgba(255,255,255,0.5);
+        /* 黃色互斥狀態 */
+        .tag-btn.exclusive { 
+            background: var(--ak-yellow) !important; color: #000 !important; 
+            box-shadow: 0 0 10px rgba(255,205,0,0.5);
         }
-        
-        /* Tag decoration (tiny triangle) */
-        .tag-btn::after {
-            content: '';
-            position: absolute;
-            top: 0; right: 0;
-            border-width: 0 6px 6px 0;
-            border-style: solid;
-            border-color: transparent #111 transparent transparent;
+        .tag-btn.exclusive::after {
+            content: 'UNIQUE'; position: absolute; top: -10px; left: 0;
+            font-size: 9px; background: var(--ak-yellow); padding: 0 3px; color: #000;
         }
-
-        /* Controls */
-        .control-row {
-            display: flex;
-            align-items: flex-end;
-            gap: 30px;
-            margin-bottom: 20px;
-            border-bottom: 1px solid #444;
-            padding-bottom: 20px;
-        }
-
-        input[type="number"] {
-            background: transparent;
-            border: none;
-            border-bottom: 2px solid var(--ak-white);
-            color: var(--ak-white);
-            font-size: 2rem;
-            width: 80px;
-            font-family: var(--font-mono);
-            text-align: center;
-        }
-        input[type="number"]:focus { outline: none; border-color: var(--ak-yellow); }
 
         .action-btn {
-            background: var(--ak-yellow);
-            color: var(--ak-dark);
-            font-weight: 900;
-            border: none;
-            height: 50px;
-            padding: 0 40px;
-            font-size: 1.2rem;
-            cursor: pointer;
-            letter-spacing: 1px;
-            clip-path: polygon(10px 0, 100% 0, 100% 100%, 0 100%, 0 10px);
+            background: var(--ak-cyan); color: #000; padding: 15px 40px;
+            border: none; font-weight: bold; cursor: pointer; font-size: 1.1rem;
+            clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);
         }
-        .action-btn:active { transform: scale(0.98); }
 
         .back-btn {
-            position: absolute;
-            top: 40px; right: 40px;
-            background: transparent;
-            border: 1px solid var(--ak-gray);
-            color: var(--ak-gray);
-            padding: 5px 15px;
-            cursor: pointer;
-            font-family: var(--font-mono);
+            position: absolute; top: 20px; right: 20px;
+            background: transparent; border: 1px solid #666; color: #666;
+            padding: 5px 15px; cursor: pointer; z-index: 10; font-family: var(--font-mono);
         }
-        .back-btn:hover { border-color: var(--ak-white); color: var(--ak-white); }
+        .back-btn:hover { border-color: #fff; color: #fff; }
 
         /* Results */
-        .results-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 15px;
-            margin-top: 10px;
-        }
-
+        .result-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; margin-top: 20px; }
         .result-card {
-            background: #222;
-            border-left: 4px solid var(--ak-cyan);
-            padding: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            animation: slideIn 0.3s ease-out forwards;
-            opacity: 0;
+            background: rgba(0,0,0,0.6); border-left: 4px solid var(--ak-cyan);
+            padding: 15px; display: flex; flex-direction: column; gap: 5px;
+            animation: fadeIn 0.3s forwards;
         }
-        
-        .result-tag-badge {
-            font-size: 0.7rem;
-            background: #333;
-            padding: 2px 6px;
-            color: var(--ak-cyan);
-            margin-left: 10px;
-        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
 
-        @keyframes slideIn {
-            from { transform: translateX(-20px); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
+        .tag-badge { font-size: 0.7rem; color: var(--ak-cyan); background: #222; padding: 2px 5px; margin-right: 4px; }
 
-        /* Loader */
         #loader {
-            position: absolute;
-            inset: 0;
-            background: #000;
-            z-index: 999;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            color: var(--ak-white);
+            position: absolute; inset: 0; background: #000; z-index: 100;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
         }
-        .loader-bar {
-            width: 200px;
-            height: 4px;
-            background: #333;
-            margin-top: 20px;
-            position: relative;
-            overflow: hidden;
-        }
-        .loader-bar::after {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; height: 100%; width: 50%;
-            background: var(--ak-yellow);
-            animation: load 2s infinite ease-in-out;
-        }
-        @keyframes load { 0% {left: -50%} 100% {left: 100%} }
-
     </style>
 </head>
 <body>
 
     <div class="container">
         <div class="header-bar">
-            <div class="logo-text">RHODES ISLAND <span style="color:var(--ak-yellow)">//</span> RECRUITMENT</div>
-            <div style="font-family:var(--font-mono); font-size:0.8rem; color:var(--ak-cyan)">SYS.VER.3.0</div>
+            <div style="font-family: var(--font-mono); color: var(--ak-yellow); font-weight: bold;">RHODES ISLAND // PRTS RECRUITMENT</div>
+            <div id="connection-status" style="font-size: 0.8rem; color: var(--ak-cyan);">STATUS: CONNECTING...</div>
         </div>
 
         <div id="loader">
-            <div style="font-weight:900; letter-spacing:5px; font-size:24px;">NEURAL NETWORK</div>
-            <div style="font-family:var(--font-mono); font-size:12px; margin-top:10px; color:#888;">SYNCHRONIZING DATABASE...</div>
-            <div class="loader-bar"></div>
+            <div style="letter-spacing: 5px; font-weight: bold;">SYNCHRONIZING</div>
+            <div style="font-family: var(--font-mono); font-size: 10px; color: #555; margin-top: 5px;">ACCESSING NEURAL NETWORK...</div>
         </div>
 
         <div id="screen-difficulty" class="screen">
-            <h1>Select Priority Level</h1>
-            <p class="section-label">// 請選擇資料庫層級 (DIFFICULTY)</p>
-            
+            <h1 style="border-left: 5px solid var(--ak-yellow); padding-left: 15px; letter-spacing: 2px;">SELECT MISSION LEVEL</h1>
             <div class="diff-grid">
-                <button class="diff-card" onclick="selectDifficulty(1)">
-                    <div class="diff-num">01</div>
-                    <div class="diff-label">Level 1</div>
-                </button>
-                <button class="diff-card" onclick="selectDifficulty(2)">
-                    <div class="diff-num">02</div>
-                    <div class="diff-label">Level 2</div>
-                </button>
-                <button class="diff-card" onclick="selectDifficulty(3)">
-                    <div class="diff-num">03</div>
-                    <div class="diff-label">Level 3</div>
-                </button>
-                <button class="diff-card" onclick="selectDifficulty(4)">
-                    <div class="diff-num">04</div>
-                    <div class="diff-label">Level 4</div>
-                </button>
-                <button class="diff-card" onclick="selectDifficulty(5)">
-                    <div class="diff-num">05</div>
-                    <div class="diff-label">Level 5</div>
-                </button>
+                <div class="ak-btn" onclick="selectDifficulty(1)">LEVEL 01</div>
+                <div class="ak-btn" onclick="selectDifficulty(2)">LEVEL 02</div>
+                <div class="ak-btn" onclick="selectDifficulty(3)">LEVEL 03</div>
+                <div class="ak-btn" onclick="selectDifficulty(4)">LEVEL 04</div>
+                <div class="ak-btn" onclick="selectDifficulty(5)">LEVEL 05</div>
             </div>
         </div>
 
         <div id="screen-selector" class="screen">
-            <button class="back-btn" onclick="goBack()"> &lt; ABORT MISSION</button>
+            <button class="back-btn" onclick="goBack()">ABORT MISSION //</button>
+            <h2 id="level-title" style="margin-top: 0;">CONFIGURATION</h2>
             
-            <h1 id="page-title">LEVEL ? - CONFIGURATION</h1>
+            <div style="color: var(--ak-gray); font-size: 0.8rem; font-family: var(--font-mono);">[ TAG SELECTION ] - 點擊切換：普通(白) / 唯一(黃) / 取消</div>
+            <div id="tag-container" class="tag-grid"></div>
 
-            <div class="tag-area">
-                <span class="section-label">TAG CONFIGURATION (COLUMN C) // 多選</span>
-                <div id="tag-container" class="tag-grid">
-                    </div>
-                <div id="tag-msg" style="margin-top:10px; font-size:0.8rem; color:var(--ak-yellow); display:none;">
-                    * 未選擇任何 Tag，將從該難度所有條目中隨機抽取。
+            <div style="margin: 20px 0; border-top: 1px solid #333; padding-top: 20px; display: flex; align-items: center;">
+                <div style="display:flex; flex-direction:column;">
+                    <label style="font-size: 0.7rem; color: var(--ak-gray); font-family: var(--font-mono);">QUANTITY //</label>
+                    <input type="number" id="select-count" value="1" min="1" max="20" style="background:#000; color:#fff; border:none; border-bottom: 2px solid #fff; padding:5px; width:80px; font-size: 1.2rem; font-family: var(--font-mono);">
                 </div>
+                <button class="action-btn" onclick="startSelection()" style="margin-left: 40px;">START DEPLOYMENT</button>
             </div>
 
-            <div class="control-row">
-                <div>
-                    <span class="section-label">RECRUIT COUNT //</span>
-                    <input type="number" id="select-count" value="1" min="1" max="10">
-                </div>
-                <button class="action-btn" onclick="startSelection()">START RECRUITMENT</button>
-            </div>
-
-            <span class="section-label">SEARCH RESULTS //</span>
-            <div id="result-container" class="results-container"></div>
+            <div id="result-container" class="result-container"></div>
         </div>
     </div>
 
     <script>
-        // ================= CONFIGURATION =================
-        // 替換為你的 Google Sheet CSV 連結
-        // 格式要求：A欄=名稱, B欄=難度(1-5), C欄=標籤(Tag)
-        const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTcai40JqQblGoCCGQqcubG9qDhhbJg3E-l6WoIQaVSpbvWw13pn4A0ilOdGjZ-j50dKNRHI7BneAmc/pub?output=csv"; 
-        const useMockData = false; // 正式使用時改為 false
-        // =================================================
-
+        // 配置你的 Google Sheet CSV 連結
+        const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTcai40JqQblGoCCGQqcubG9qDhhbJg3E-l6WoIQaVSpbvWw13pn4A0ilOdGjZ-j50dKNRHI7BneAmc/pub?output=csv";
+        
         let allData = [];
         let currentLevelData = [];
-        let selectedTags = new Set(); // 儲存使用者勾選的 Tag
+        let tagStates = {}; // 0:無, 1:普通, 2:互斥
 
-        // 模擬資料 (展示 C 欄用途)
-        const mockData = [
-            { name: "預備幹員", difficulty: 1, tag: "男性" }, 
-            { name: "芬", difficulty: 1, tag: "女性" },
-            { name: "玫蘭莎", difficulty: 2, tag: "女性" }, 
-            { name: "史都華德", difficulty: 2, tag: "男性" },
-            { name: "阿米婭", difficulty: 3, tag: "女性" }, 
-            { name: "安賽爾", difficulty: 3, tag: "男性" },
-            { name: "銀灰", difficulty: 4, tag: "男性" }, 
-            { name: "能天使", difficulty: 4, tag: "女性" },
-            { name: "角峰", difficulty: 4, tag: "重裝" }, 
-            { name: "臨光", difficulty: 4, tag: "重裝" },
-            { name: "假日威龍陳", difficulty: 5, tag: "女性" }, 
-            { name: "瑪恩納", difficulty: 5, tag: "男性" },
-            { name: "泥岩", difficulty: 5, tag: "重裝" }
-        ];
-
+        // 初始化讀取
         window.onload = async () => {
-            if (useMockData) {
-                setTimeout(() => { allData = mockData; initComplete(); }, 1000);
-            } else {
-                try {
-                    await fetchSheetData();
-                    initComplete();
-                } catch (e) {
-                    alert("Data Load Error");
-                    console.error(e);
-                }
+            try {
+                const res = await fetch(GOOGLE_SHEET_URL);
+                if (!res.ok) throw new Error("Fetch failed");
+                const text = await res.text();
+                const rows = text.split(/\r?\n/).slice(1);
+                
+                allData = rows.map(r => {
+                    const c = r.split(',');
+                    if (c.length < 2) return null;
+                    return { 
+                        name: c[0]?.trim(), 
+                        diff: parseInt(c[1]), 
+                        tag: c[2] ? c[2].trim() : "其他" 
+                    };
+                }).filter(i => i && i.name);
+
+                document.getElementById('loader').style.display = 'none';
+                document.getElementById('screen-difficulty').classList.add('active');
+                document.getElementById('connection-status').innerText = "STATUS: ONLINE";
+            } catch (e) {
+                document.getElementById('loader').innerText = "CONNECTION ERROR: Check Console";
+                console.error(e);
             }
         };
 
-        function initComplete() {
-            document.getElementById('loader').style.display = 'none';
-            document.getElementById('screen-difficulty').classList.add('active');
-        }
-
-        // 替換原本的 fetchSheetData 函式
-	async function fetchSheetData() {
-    console.log("正在嘗試連線至:", GOOGLE_SHEET_CSV_URL);
-    
-    const response = await fetch(GOOGLE_SHEET_CSV_URL);
-    
-    // 檢查連線狀態
-    if (!response.ok) {
-        throw new Error(`伺服器回應錯誤: ${response.status} ${response.statusText}`);
-    }
-
-    const data = await response.text();
-    console.log("取得原始資料:", data); // 在 F12 Console 可以看到抓到了什麼
-
-    // 檢查是否抓到了 HTML 網頁而不是 CSV (常見錯誤)
-    if (data.trim().startsWith("<!DOCTYPE html>") || data.includes("<html")) {
-        throw new Error("抓取到的是網頁而非 CSV，請檢查連結結尾是否為 output=csv，且權限已公開。");
-    }
-
-    const rows = data.split(/\r\n|\n/); // 更嚴謹的換行切割
-    
-    // 解析資料
-    allData = rows.slice(1).map((row, index) => {
-        // 使用簡單的正則表達式處理逗號 (避免切到名稱裡的逗號)
-        // 如果你的資料很簡單，用 row.split(',') 也可以
-        const cols = row.split(','); 
-
-        if(cols.length >= 2) {
-            // 安全處理：去除前後空白
-            const name = cols[0] ? cols[0].trim() : "";
-            const diffStr = cols[1] ? cols[1].trim() : "1";
-            const tagStr = cols[2] ? cols[2].trim() : "其他";
-
-            // 跳過空行
-            if (!name) return null;
-
-            return {
-                name: name,
-                difficulty: parseInt(diffStr) || 1, // 如果轉換失敗預設為 1
-                tag: tagStr || "其他"
-            };
-        }
-        return null;
-    }).filter(item => item !== null); // 過濾掉失敗的解析
-
-    console.log("解析完成，資料筆數:", allData.length);
-    
-    if (allData.length === 0) {
-        throw new Error("資料解析後為空，請檢查試算表內容格式。");
-    }
-	}
-
-        function selectDifficulty(level) {
-            // 1. 篩選難度
-            currentLevelData = allData.filter(item => item.difficulty === level);
-            
-            if(currentLevelData.length === 0 && !useMockData) {
-                alert("此難度無資料");
+        // 選擇難度並解析多標籤
+        function selectDifficulty(lv) {
+            currentLevelData = allData.filter(i => i.diff === lv);
+            if (currentLevelData.length === 0) {
+                alert("該難度暫無數據");
                 return;
             }
 
-            // 2. 切換頁面
             document.getElementById('screen-difficulty').classList.remove('active');
             document.getElementById('screen-selector').classList.add('active');
-            document.getElementById('page-title').innerText = `LEVEL 0${level} - CONFIGURATION`;
+            document.getElementById('level-title').innerText = `OPERATION LEVEL 0${lv}`;
+            
+            // 重置狀態
+            tagStates = {};
+            document.getElementById('result-container').innerHTML = '';
 
-            // 3. 初始化 Tag 系統
-            selectedTags.clear(); // 清除之前的選擇
-            renderTagsForLevel(); // 產生按鈕
-            document.getElementById('result-container').innerHTML = ''; // 清空結果
+            // 解析該等級所有出現過的標籤 (支援空格隔開的多標籤)
+            let rawTags = [];
+            currentLevelData.forEach(item => {
+                const splitTags = item.tag.split(/\s+/); 
+                rawTags = rawTags.concat(splitTags);
+            });
+            const tags = [...new Set(rawTags)].filter(t => t !== "");
+
+            const container = document.getElementById('tag-container');
+            container.innerHTML = '';
+
+            tags.forEach(t => {
+                const btn = document.createElement('button');
+                btn.className = 'tag-btn';
+                btn.innerText = t;
+                btn.onclick = () => {
+                    // 三態切換邏輯
+                    if (!tagStates[t]) {
+                        tagStates[t] = 1; btn.classList.add('active');
+                    } else if (tagStates[t] === 1) {
+                        tagStates[t] = 2; btn.classList.remove('active'); btn.classList.add('exclusive');
+                    } else {
+                        delete tagStates[t]; btn.classList.remove('exclusive');
+                    }
+                };
+                container.appendChild(btn);
+            });
         }
 
-        // 動態生成該難度下所有的標籤按鈕
-        function renderTagsForLevel() {
-            const tagContainer = document.getElementById('tag-container');
-            tagContainer.innerHTML = '';
+        // 重置與返回
+        function goBack() {
+            document.getElementById('screen-selector').classList.remove('active');
+            document.getElementById('screen-difficulty').classList.add('active');
+            tagStates = {};
+            document.getElementById('result-container').innerHTML = '';
+            document.getElementById('select-count').value = 1;
+        }
+
+        // 輔助函式：檢查項目是否包含某個標籤
+        function hasTag(item, targetTag) {
+            if (!item.tag) return false;
+            const itemTags = item.tag.split(/\s+/);
+            return itemTags.includes(targetTag);
+        }
+
+        // 執行隨機抽取
+        function startSelection() {
+            const count = parseInt(document.getElementById('select-count').value) || 1;
+            let results = [];
+            const selectedKeys = Object.keys(tagStates);
+            const resContainer = document.getElementById('result-container');
+            resContainer.innerHTML = '';
+
+            if (selectedKeys.length === 0) {
+                // 若無選標籤，則從該難度全抽
+                results = [...currentLevelData];
+            } else {
+                const exTags = selectedKeys.filter(k => tagStates[k] === 2);
+                const normalTags = selectedKeys.filter(k => tagStates[k] === 1);
+
+                // 1. 處理黃色 (每個標籤僅出一個)
+                exTags.forEach(t => {
+                    const matches = currentLevelData.filter(item => hasTag(item, t));
+                    if (matches.length) {
+                        const randomOne = matches[Math.floor(Math.random() * matches.length)];
+                        if (!results.includes(randomOne)) results.push(randomOne);
+                    }
+                });
+
+                // 2. 處理白色 (普通聯集池)
+                if (normalTags.length > 0) {
+                    const pool = currentLevelData.filter(item => {
+                        const isMatch = normalTags.some(t => hasTag(item, t));
+                        return isMatch && !results.includes(item);
+                    });
+                    results = [...results, ...pool];
+                }
+            }
+
+            // 洗牌並依照需求數量取樣
+            const final = results.sort(() => 0.5 - Math.random()).slice(0, count);
             
-            // 抓出所有不重複的 tag
-            const uniqueTags = [...new Set(currentLevelData.map(item => item.tag))];
-            
-            if(uniqueTags.length === 0) {
-                tagContainer.innerHTML = '<span style="color:#666">// NO TAGS AVAILABLE</span>';
+            if (final.length === 0) {
+                resContainer.innerHTML = '<div style="color:var(--ak-yellow)">NO MATCHING DATA FOUND</div>';
                 return;
             }
 
-            uniqueTags.forEach(tag => {
-                const btn = document.createElement('button');
-                btn.className = 'tag-btn';
-                btn.innerText = tag;
-                btn.onclick = () => toggleTag(btn, tag);
-                tagContainer.appendChild(btn);
+            final.forEach((i, idx) => {
+                setTimeout(() => {
+                    const div = document.createElement('div');
+                    div.className = 'result-card';
+                    
+                    // 如果該項目的標籤中有包含任何「黃色選中標籤」，則框線變黃
+                    const containsEx = selectedKeys.filter(k => tagStates[k] === 2).some(t => hasTag(i, t));
+                    if (containsEx) div.style.borderColor = 'var(--ak-yellow)';
+
+                    // 生成標籤小徽章
+                    const badges = i.tag.split(/\s+/).map(t => `<span class="tag-badge">${t}</span>`).join('');
+
+                    div.innerHTML = `
+                        <div style="font-weight:bold; font-size:1.1rem; letter-spacing:1px;">${i.name}</div>
+                        <div>${badges}</div>
+                    `;
+                    resContainer.appendChild(div);
+                }, idx * 50);
             });
-            
-            updateTagMessage();
         }
-
-				function goBack() {
-		    // 1. 隱藏選擇頁面，顯示難度頁面
-		    document.getElementById('screen-selector').classList.remove('active');
-		    document.getElementById('screen-difficulty').classList.add('active');
-		    
-		    // 2. 核心重置：清空所有已選標籤狀態
-		    selectedTags.clear(); // 如果你還留著原本的 Set
-		    tagStates = {};       // 清空我們新增的互斥標籤物件
-		    
-		    // 3. UI 重置：清空結果區域
-		    document.getElementById('result-container').innerHTML = '';
-		    
-		    // 4. 重置輸入框 (可選)
-		    document.getElementById('select-count').value = 1;
-		
-		    console.log("Mission Aborted. System Reset.");
-		}
-
-       // 1. 修改儲存結構：現在需要儲存 Tag 的狀態 (0:未選, 1:普通, 2:互斥)
-		let tagStates = {}; // 格式: { "男性": 1, "重裝": 2 }
-
-		// 2. 修改點擊 Tag 的邏輯
-		function toggleTag(btn, tag) {
-			if (!tagStates[tag]) {
-				// 狀態 0 -> 1 (普通選擇)
-				tagStates[tag] = 1;
-				btn.classList.add('active');
-				btn.classList.remove('exclusive');
-			} else if (tagStates[tag] === 1) {
-				// 狀態 1 -> 2 (互斥選擇/黃色)
-				tagStates[tag] = 2;
-				btn.classList.remove('active');
-				btn.classList.add('exclusive');
-			} else {
-				// 狀態 2 -> 0 (取消選擇)
-				delete tagStates[tag];
-				btn.classList.remove('active');
-				btn.classList.remove('exclusive');
-			}
-			updateTagMessage();
-		}
-
-		// 3. 核心功能：修改抽取邏輯
-		function startSelection() {
-			const container = document.getElementById('result-container');
-			container.innerHTML = '';
-
-			const selectedKeys = Object.keys(tagStates);
-			const countInput = document.getElementById('select-count');
-			let totalNeeded = parseInt(countInput.value) || 1;
-
-			let finalResults = [];
-
-			if (selectedKeys.length === 0) {
-				// 沒選 Tag：直接從該難度全抽
-				finalResults = [...currentLevelData].sort(() => 0.5 - Math.random()).slice(0, totalNeeded);
-			} else {
-				const exclusiveTags = selectedKeys.filter(t => tagStates[t] === 2);
-				const normalTags = selectedKeys.filter(t => tagStates[t] === 1);
-
-				// --- 第一步：處理黃色 (Exclusive) Tag ---
-				exclusiveTags.forEach(tag => {
-					let matches = currentLevelData.filter(item => item.tag === tag);
-					if (matches.length > 0) {
-						// 每個黃色 Tag 只隨機取一個
-						let randomOne = matches[Math.floor(Math.random() * matches.length)];
-						finalResults.push(randomOne);
-					}
-				});
-
-				// --- 第二步：處理普通 Tag 並填補剩餘數量 ---
-				// 找出所有符合普通 Tag 的剩餘候選名單 (且不重複包含已選中的對象)
-				let remainingPool = currentLevelData.filter(item => 
-					normalTags.includes(item.tag) && !finalResults.includes(item)
-				);
-
-				// 洗牌剩餘池
-				let shuffledPool = remainingPool.sort(() => 0.5 - Math.random());
-				
-				// 填補直到達到使用者要求的數量
-				while (finalResults.length < totalNeeded && shuffledPool.length > 0) {
-					finalResults.push(shuffledPool.shift());
-				}
-			}
-
-			// --- 第三步：渲染結果 ---
-			if (finalResults.length === 0) {
-				container.innerHTML = '<div style="color:red; padding:20px;">ERROR: NO MATCHING DATA</div>';
-				return;
-			}
-
-			finalResults.forEach((item, index) => {
-				setTimeout(() => {
-					const div = document.createElement('div');
-					div.className = 'result-card';
-					// 如果是互斥抽出的，給個不同的邊框色
-					if (tagStates[item.tag] === 2) div.style.borderColor = 'var(--ak-yellow)';
-					
-					div.innerHTML = `
-						<div>
-							<span style="font-weight:900; font-size:1.1rem">${item.name}</span>
-							<span class="result-tag-badge" style="${tagStates[item.tag] === 2 ? 'color:var(--ak-yellow)' : ''}">${item.tag}</span>
-						</div>
-						<div style="font-family:monospace; color:#666; font-size:0.8rem">L${item.difficulty}</div>
-					`;
-					container.appendChild(div);
-				}, index * 100);
-			});
-		}
     </script>
 </body>
 </html>
-
