@@ -528,6 +528,24 @@
             updateTagMessage();
         }
 
+				function goBack() {
+		    // 1. 隱藏選擇頁面，顯示難度頁面
+		    document.getElementById('screen-selector').classList.remove('active');
+		    document.getElementById('screen-difficulty').classList.add('active');
+		    
+		    // 2. 核心重置：清空所有已選標籤狀態
+		    selectedTags.clear(); // 如果你還留著原本的 Set
+		    tagStates = {};       // 清空我們新增的互斥標籤物件
+		    
+		    // 3. UI 重置：清空結果區域
+		    document.getElementById('result-container').innerHTML = '';
+		    
+		    // 4. 重置輸入框 (可選)
+		    document.getElementById('select-count').value = 1;
+		
+		    console.log("Mission Aborted. System Reset.");
+		}
+
        // 1. 修改儲存結構：現在需要儲存 Tag 的狀態 (0:未選, 1:普通, 2:互斥)
 		let tagStates = {}; // 格式: { "男性": 1, "重裝": 2 }
 
@@ -622,3 +640,4 @@
     </script>
 </body>
 </html>
+
