@@ -2,157 +2,261 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>PRTS 終端 v9.3 - 戰術模擬器</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PRTS // TACTICAL TERMINAL v9.2</title>
     <style>
-        :root { --prts-blue: #00BAFF; --prts-bg: #121212; --prts-card: #1E1E1E; }
-        body { background: var(--prts-bg); color: white; font-family: "Segoe UI", sans-serif; display: flex; flex-direction: column; align-items: center; margin: 0; overflow-x: hidden; }
-        
-        /* UI 佈局保持原樣 */
-        #header { width: 100%; padding: 20px; background: rgba(0,0,0,0.8); border-bottom: 2px solid var(--prts-blue); display: flex; justify-content: space-between; align-items: center; box-sizing: border-box; }
-        #risk-display { font-size: 2.5rem; color: var(--prts-blue); font-weight: bold; text-shadow: 0 0 10px var(--prts-blue); }
-        
-        #main-container { display: flex; gap: 20px; padding: 20px; width: 95%; max-width: 1200px; }
-        #contract-area { flex: 2; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
-        #control-panel { flex: 1; background: var(--prts-card); padding: 20px; border-radius: 8px; border: 1px solid #333; height: fit-content; }
-        
-        .contract-card { background: #2A2A2A; border: 1px solid #444; padding: 15px; border-radius: 4px; transition: 0.3s; cursor: pointer; }
-        .contract-card.selected { border-color: var(--prts-blue); background: #2A3540; box-shadow: inset 0 0 10px rgba(0,186,255,0.2); }
-        .level-tag { float: right; padding: 2px 8px; background: #444; border-radius: 10px; font-size: 0.8rem; }
-        
-        button { background: transparent; border: 1px solid var(--prts-blue); color: var(--prts-blue); padding: 10px 20px; cursor: pointer; transition: 0.3s; width: 100%; margin-top: 10px; font-weight: bold; }
-        button:hover { background: var(--prts-blue); color: black; }
-        
-        #target-display { font-size: 1.5rem; margin: 15px 0; color: #FFD700; border: 1px dashed #555; padding: 10px; text-align: center; }
+        :root {
+            --ak-red: #ff3e3e; --ak-yellow: #ffcd00; --ak-cyan: #00e5ff; --bg-dark: #050505;
+            --font-mono: 'Consolas', 'Courier New', monospace;
+        }
+        body, html { margin: 0; padding: 0; background: var(--bg-dark); color: #fff; font-family: var(--font-mono); overflow: hidden; height: 100vh; width: 100vw; }
+        .bg-fx { position: fixed; inset: 0; z-index: -1; background: linear-gradient(rgba(255,62,62,0.1) 1px, transparent 1px), radial-gradient(circle, #111 1px, transparent 1px); background-size: 100% 3px, 30px 30px; opacity: 0.4; }
+        .app-wrapper { width: 100%; height: 100%; display: flex; flex-direction: column; position: relative; }
+        .top-bar { height: 50px; background: #000; border-bottom: 2px solid var(--ak-red); display: flex; align-items: center; padding: 0 25px; justify-content: space-between; z-index: 1000; }
+        .sidebar { position: fixed; left: -295px; top: 50px; bottom: 0; width: 315px; background: rgba(5, 5, 5, 0.95); border-right: 2px solid var(--ak-red); transition: 0.4s; z-index: 999; backdrop-filter: blur(10px); display: flex; flex-direction: column; }
+        .sidebar:hover { left: 0; }
+        .sidebar-handle { position: absolute; right: 0; top: 0; bottom: 0; width: 20px; background: repeating-linear-gradient(45deg, #000, #000 10px, var(--ak-red) 10px, var(--ak-red) 11px); cursor: pointer; opacity: 0.6; }
+        .sidebar-content { flex: 1; padding: 20px; overflow-y: auto; }
+        .risk-meter { height: 4px; width: 100%; background: #222; margin: 10px 0; position: relative; }
+        #risk-fill { height: 100%; width: 0%; background: var(--ak-red); transition: 0.5s; box-shadow: 0 0 10px var(--ak-red); }
+        .slot-zone { display: flex; gap: 5px; padding: 10px 20px; background: #000; border-top: 1px solid #333; }
+        .slot-btn { flex: 1; background: #111; border: 1px solid #444; color: #666; font-size: 10px; padding: 5px; cursor: pointer; }
+        .slot-btn.active { border-color: var(--ak-cyan); color: var(--ak-cyan); }
+        .main-screen { flex: 1; padding: 40px; overflow-y: auto; display: none; box-sizing: border-box; }
+        .main-screen.active { display: block; }
+        .diff-card { background: #111; border: 1px solid #333; height: 160px; cursor: pointer; position: relative; clip-path: polygon(15% 0, 100% 0, 100% 85%, 85% 100%, 0 100%, 0 15%); transition: 0.3s; }
+        .diff-card:hover { border-color: var(--ak-red); transform: scale(1.05); }
+        .contract-card { background: #0a0a0a; border: 1px solid #333; border-left: 6px solid var(--ak-red); padding: 20px; cursor: pointer; position: relative; }
+        .contract-card.animate-in { animation: cardSlideIn 0.4s ease-out backwards; }
+        @keyframes cardSlideIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        .contract-card.locked { border-left-color: var(--ak-cyan); background: #0a1820; border-color: var(--ak-cyan); }
+        .tag-btn { background: #1a1a1a; border: 1px solid #333; color: #666; padding: 8px 18px; margin: 5px; cursor: pointer; }
+        .tag-btn.active { background: #fff; color: #000; }
+        .tag-btn.exclusive { background: var(--ak-yellow); color: #000; }
+        .execute-btn { background: var(--ak-red); color: #fff; padding: 15px 40px; border: none; font-weight: bold; cursor: pointer; clip-path: polygon(5% 0, 100% 0, 95% 100%, 0% 100%); margin-right: 10px; }
+        body.report-mode .sidebar, body.report-mode .top-bar, body.report-mode .tag-zone, body.report-mode .execute-btn, body.report-mode #back-zone, body.report-mode .locate-btn { display: none !important; }
+        .report-overlay { display: none; position: fixed; top: 20px; right: 20px; color: var(--ak-red); border: 2px solid var(--ak-red); padding: 10px; font-weight: bold; z-index: 2000; }
+        body.report-mode .report-overlay { display: block; }
     </style>
 </head>
 <body>
 
-<div id="header">
-    <div>PRTS TERMINAL v9.3 - STRATEGIC OVERRIDE</div>
-    <div id="risk-display">TOTAL RISK: <span id="risk-index">0</span></div>
-</div>
+<div class="bg-fx"></div>
+<div class="report-overlay">PRTS // CLASSIFIED_REPORT</div>
 
-<div id="main-container">
-    <div id="contract-area">
+<div class="app-wrapper">
+    <div class="top-bar">
+        <div style="display:flex; align-items:center; gap:20px;">
+            <span style="letter-spacing:3px; font-weight:bold; color:var(--ak-red);">PRTS // TERMINAL v9.2</span>
+            <div id="back-zone" style="display:none;"><button onclick="goBack()" style="background:none; border:1px solid #444; color:#888; cursor:pointer;">RETURN</button></div>
         </div>
+        <button onclick="toggleReportMode()" style="background:none; border:1px solid var(--ak-cyan); color:var(--ak-cyan); cursor:pointer; font-size:10px;">GENERATE_REPORT</button>
+    </div>
 
-    <div id="control-panel">
-        <h3>戰場定位 (LOCATION)</h3>
-        <div id="target-display">等待掃描...</div>
-        <button onclick="acquireTarget()">ACQUIRE TARGET</button>
-        
-        <hr style="border: 0.5px solid #444; margin: 20px 0;">
-        
-        <h3>系統操作 (SYSTEM)</h3>
-        <button onclick="shuffleContracts()">RE-SCAN CONTRACTS</button>
-        <button onclick="resetSystem()" style="border-color: #ff4444; color: #ff4444;">RESET SYSTEM</button>
+    <div class="sidebar">
+        <div class="sidebar-handle"></div>
+        <div class="sidebar-content">
+            <div style="font-size:10px; color:var(--ak-cyan);">MISSION_LOCATION</div>
+            <div id="target-display" style="font-size:1.3rem; font-weight:bold; margin:10px 0; border-left:3px solid var(--ak-cyan); padding-left:10px; min-height:1.5em;">AWAITING_SIGNAL</div>
+            <button class="locate-btn" onclick="acquireTarget()" style="width:100%; background:none; border:1px solid var(--ak-cyan); color:var(--ak-cyan); cursor:pointer; padding:5px;">ACQUIRE_TARGET</button>
+            <div style="font-size:14px; color:var(--ak-cyan); margin-top:20px; border-bottom:1px solid #333;">LOCKED_LIST</div>
+            <div id="sidebar-list"></div>
+        </div>
+        <div style="padding: 20px; background: #050505;">
+            <div style="font-size:10px; color:#888;">RISK_INDEX</div>
+            <div class="risk-meter"><div id="risk-fill"></div></div>
+            <div style="font-size:2.8rem; font-weight:900; color:var(--ak-yellow);" id="total-risk">00</div>
+        </div>
+        <div class="slot-zone">
+            <button class="slot-btn active" onclick="switchSlot(0)">SLOT_A</button>
+            <button class="slot-btn" onclick="switchSlot(1)">SLOT_B</button>
+            <button class="slot-btn" onclick="switchSlot(2)">SLOT_C</button>
+        </div>
+    </div>
+
+    <div id="screen-diff" class="main-screen active">
+        <h1 style="font-size:2rem; letter-spacing:8px;">MISSION_CONTROL</h1>
+        <div id="diff-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px; margin-top: 50px;"></div>
+    </div>
+
+    <div id="screen-draw" class="main-screen">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <h2 id="current-lv-label" style="margin:0; color:var(--ak-red);">LV.01</h2>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <span style="font-size:12px; color:#555;">QTY</span>
+                <input type="number" id="draw-count" value="1" min="1" max="10" style="background:none; border:none; border-bottom:2px solid #fff; color:#fff; width:40px; text-align:center; font-size:1.2rem;">
+            </div>
+        </div>
+        <div id="tag-zone" class="tag-zone" style="margin: 20px 0;"></div>
+        <button class="execute-btn" onclick="executeScan(false)">NEURAL_SCAN</button>
+        <button class="execute-btn" onclick="executeScan(true)" style="background:none; border:1px solid #555;">RE-SCAN</button>
+        <div id="result-zone" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; margin-top: 30px;"></div>
     </div>
 </div>
 
 <script>
-    // 博士的試算表配置
-    const CONTRACT_URL = "https://docs.google.com/spreadsheets/d/1vP4S0eLnd_u5-K8-C6wAInyP6iSipBwN6DclT-XmR6M/export?format=csv&gid=0";
-    const LOCATION_URL = "https://docs.google.com/spreadsheets/d/1vP4S0eLnd_u5-K8-C6wAInyP6iSipBwN6DclT-XmR6M/export?format=csv&gid=754158994";
+    // --- 這裡就是你要的兩行數據路徑 ---
+    const CONTRACT_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTcai40JqQblGoCCGQqcubG9qDhhbJg3E-l6WoIQaVSpbvWw13pn4A0ilOdGjZ-j50dKNRHI7BneAmc/pub?gid=0&output=csv";
+    const LOCATION_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTcai40JqQblGoCCGQqcubG9qDhhbJg3E-l6WoIQaVSpbvWw13pn4A0ilOdGjZ-j50dKNRHI7BneAmc/pub?gid=754158994&output=csv";
 
-    let allContracts = [];
-    let selectedContracts = [];
-    let currentMapRisk = 0; // 核心：紀錄地圖 B 欄的正負分
+    let db_contracts = [];
+    let db_locations = [];
+    let state_current_level_items = [], state_tags = {};
+    let state_slots = [[], [], []], current_slot_idx = 0;
+    let current_results = [];
 
-    // 初始化系統
-    async function init() {
-        await fetchContracts();
-        shuffleContracts();
-    }
+    window.onload = async () => {
+        await initSystem();
+        renderDifficultyCards();
+    };
 
-    // 抓取合約資料 (Sheet 1)
-    async function fetchContracts() {
+    async function initSystem() {
         try {
-            const response = await fetch(CONTRACT_URL);
-            const data = await response.text();
-            const rows = data.split('\n').slice(1); // 略過標題
-            allContracts = rows.map(row => {
-                const cols = row.split(',');
-                return { name: cols[0], level: parseInt(cols[1]) || 0, tag: cols[2] };
-            }).filter(c => c.name);
-        } catch (e) { console.error("合約讀取失敗"); }
+            const [cRes, lRes] = await Promise.all([fetch(CONTRACT_URL), fetch(LOCATION_URL)]);
+            const cText = await cRes.text();
+            const lText = await lRes.text();
+            db_contracts = cText.split(/\r?\n/).slice(1).map((r, idx) => {
+                const cols = r.split(',');
+                return { name: cols[0]?.trim(), diff: parseInt(cols[1]), tag: cols[2]?.trim() || "其他", row: idx + 2 };
+            }).filter(i => i.name && !isNaN(i.diff));
+            db_locations = lText.split(/\r?\n/).slice(1).map(r => r.split(',')[0]?.trim()).filter(i => i);
+        } catch (e) { console.error("PRTS: Data Sync Failed."); }
     }
 
-    // 隨機抽取 12 個合約 (包含第 4、5 等級)
-    function shuffleContracts() {
-        const area = document.getElementById('contract-area');
-        area.innerHTML = '';
-        selectedContracts = [];
-        
-        const shuffled = allContracts.sort(() => 0.5 - Math.random()).slice(0, 12);
-        shuffled.forEach(c => {
+    function renderDifficultyCards() {
+        const container = document.getElementById('diff-container');
+        container.innerHTML = '';
+        for(let i=1; i<=5; i++) {
             const card = document.createElement('div');
-            card.className = 'contract-card';
-            card.innerHTML = `<span class="level-tag">LV ${c.level}</span><div>${c.name}</div><small style="color:#888">${c.tag || ''}</small>`;
-            card.onclick = () => toggleContract(card, c);
-            area.appendChild(card);
+            card.className = 'diff-card';
+            card.innerHTML = `<div style="font-size:4rem; font-weight:900; color:var(--ak-red); position:absolute; bottom:5px; right:15px; opacity:0.5;">0${i}</div>`;
+            card.onclick = () => enterLevel(i);
+            container.appendChild(card);
+        }
+    }
+
+    function enterLevel(lv) {
+        state_current_level_items = db_contracts.filter(i => i.diff === lv);
+        document.getElementById('screen-diff').classList.remove('active');
+        document.getElementById('screen-draw').classList.add('active');
+        document.getElementById('back-zone').style.display = 'block';
+        document.getElementById('current-lv-label').innerText = `RISK_LEVEL_0${lv}`;
+        renderTagButtons();
+        executeScan(false);
+    }
+
+    function renderTagButtons() {
+        const zone = document.getElementById('tag-zone');
+        zone.innerHTML = '';
+        const tags = [...new Set(state_current_level_items.flatMap(i => i.tag.split(/\s+/)))].filter(t => t);
+        tags.forEach(t => {
+            const btn = document.createElement('button');
+            btn.className = 'tag-btn';
+            btn.innerText = t;
+            btn.onclick = () => {
+                if(!state_tags[t]) { state_tags[t]=1; btn.classList.add('active'); }
+                else if(state_tags[t]===1) { state_tags[t]=2; btn.classList.remove('active'); btn.classList.add('exclusive'); }
+                else { delete state_tags[t]; btn.classList.remove('exclusive'); }
+            };
+            zone.appendChild(btn);
         });
-        updateTotalRisk();
     }
 
-    // 切換選中狀態
-    function toggleContract(dom, contract) {
-        const index = selectedContracts.indexOf(contract);
-        if (index > -1) {
-            selectedContracts.splice(index, 1);
-            dom.classList.remove('selected');
+    function executeScan(isReroll) {
+        const count = parseInt(document.getElementById('draw-count').value) || 1;
+        let lockedInCurrent = current_results.filter(i => state_slots[current_slot_idx].some(s => s.row === i.row));
+        const needed = count - lockedInCurrent.length;
+        if(needed <= 0 && isReroll) return;
+
+        const exclusiveTags = Object.keys(state_tags).filter(k => state_tags[k] === 2);
+        const normalTags = Object.keys(state_tags).filter(k => state_tags[k] === 1);
+
+        let candidates = state_current_level_items.filter(i => {
+            const itemTags = i.tag.split(/\s+/);
+            const isExcluded = exclusiveTags.some(t => itemTags.includes(t));
+            const isAlreadyLocked = state_slots[current_slot_idx].some(s => s.row === i.row);
+            return !isExcluded && !isAlreadyLocked;
+        });
+
+        if(normalTags.length > 0) candidates = candidates.filter(i => normalTags.some(t => i.tag.split(/\s+/).includes(t)));
+        const pool = candidates.sort(() => 0.5 - Math.random()).slice(0, Math.max(0, needed));
+        current_results = [...lockedInCurrent, ...pool];
+        renderResultGrid(current_results, !isReroll);
+    }
+
+    function renderResultGrid(items, animate) {
+        const zone = document.getElementById('result-zone');
+        zone.innerHTML = '';
+        items.forEach((item, idx) => {
+            const isLocked = state_slots[current_slot_idx].some(s => s.row === item.row);
+            const card = document.createElement('div');
+            card.className = `contract-card ${isLocked ? 'locked' : ''} ${animate ? 'animate-in' : ''}`;
+            card.style.animationDelay = `${idx * 0.05}s`;
+            card.innerHTML = `
+                <div style="font-size:10px; color:#555;">>> ROW-${item.row} <span class="lock-indicator">${isLocked ? '[LOCKED]' : ''}</span></div>
+                <div style="font-weight:bold; margin:10px 0; min-height:2.4em;">${item.name}</div>
+                <div style="font-size:10px; color:var(--ak-cyan);">TAGS: ${item.tag}</div>
+            `;
+            card.onclick = () => toggleLockLocal(item, card);
+            zone.appendChild(card);
+        });
+    }
+
+    function toggleLockLocal(item, card) {
+        let currentLocked = state_slots[current_slot_idx];
+        const idx = currentLocked.findIndex(l => l.row === item.row);
+        const indicator = card.querySelector('.lock-indicator');
+        if(idx > -1) {
+            currentLocked.splice(idx, 1);
+            card.classList.remove('locked');
+            indicator.innerText = '';
         } else {
-            selectedContracts.push(contract);
-            dom.classList.add('selected');
+            currentLocked.push(item);
+            card.classList.add('locked');
+            indicator.innerText = '[LOCKED]';
         }
-        updateTotalRisk();
+        updateSidebarUI();
     }
 
-    // 核心功能：抽取關卡並讀取 B 欄數值
-    async function acquireTarget() {
-        try {
-            const response = await fetch(LOCATION_URL);
-            const data = await response.text();
-            // 處理 CSV 換行與逗號，移除可能的雙引號
-            const rows = data.split('\n').filter(r => r.trim()).map(row => row.split(','));
-            
-            // 隨機選取關卡（跳過標題）
-            const randomIndex = Math.floor(Math.random() * (rows.length - 1)) + 1;
-            const selectedRow = rows[randomIndex];
-
-            const mapName = selectedRow[0].replace(/"/g, '').trim();
-            // 讀取 B 欄分數，並處理負號與空格
-            currentMapRisk = parseInt(selectedRow[1]) || 0;
-
-            document.getElementById('target-display').innerText = mapName;
-            
-            // 更新總分
-            updateTotalRisk();
-        } catch (e) { 
-            document.getElementById('target-display').innerText = "通訊異常";
-            console.error("地圖讀取失敗", e); 
-        }
+    function updateSidebarUI() {
+        const list = document.getElementById('sidebar-list');
+        const riskFill = document.getElementById('risk-fill');
+        list.innerHTML = '';
+        let total = 0;
+        state_slots[current_slot_idx].sort((a,b)=>a.diff-b.diff).forEach(i => {
+            total += i.diff;
+            const d = document.createElement('div');
+            d.style = "font-size:11px; padding:5px 0; border-bottom:1px solid #222;";
+            d.innerHTML = `<span style="color:var(--ak-red)">[LV.${i.diff}]</span> ${i.name}`;
+            list.appendChild(d);
+        });
+        document.getElementById('total-risk').innerText = total.toString().padStart(2, '0');
+        riskFill.style.width = Math.min(100, (total / 30) * 100) + "%";
     }
 
-    // 更新總分 (合約等級 + 地圖權重)
-    function updateTotalRisk() {
-        let contractScore = 0;
-        selectedContracts.forEach(c => contractScore += c.level);
-        
-        // 最終計算
-        const finalTotal = contractScore + currentMapRisk;
-        
-        // 更新 UI
-        document.getElementById('risk-index').innerText = finalTotal;
+    function switchSlot(idx) {
+        current_slot_idx = idx;
+        document.querySelectorAll('.slot-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+        updateSidebarUI();
+        renderResultGrid(current_results, false);
     }
 
-    function resetSystem() {
-        currentMapRisk = 0;
-        document.getElementById('target-display').innerText = "等待掃描...";
-        shuffleContracts();
+    function acquireTarget() {
+        if(db_locations.length === 0) return;
+        const roll = db_locations[Math.floor(Math.random() * db_locations.length)];
+        document.getElementById('target-display').innerText = roll;
     }
 
-    window.onload = init;
+    function toggleReportMode() { document.body.classList.toggle('report-mode'); }
+    function goBack() {
+        document.getElementById('screen-draw').classList.remove('active');
+        document.getElementById('screen-diff').classList.add('active');
+        document.getElementById('back-zone').style.display = 'none';
+        current_results = [];
+    }
 </script>
-
 </body>
 </html>
+</body>
+</html>
+
