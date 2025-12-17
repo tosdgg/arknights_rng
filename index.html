@@ -3,141 +3,174 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PRTS // Recruitment Terminal v3.5</title>
+    <title>PRTS // Recruitment Terminal v4.0</title>
     <style>
         :root {
-            --bg-color: #1a1a1a;
-            --panel-bg: rgba(30, 30, 30, 0.95);
+            --bg-color: #0a0a0a;
+            --panel-bg: rgba(20, 20, 20, 0.9);
             --ak-yellow: #ffcd00; 
-            --ak-cyan: #23c7d6;   
+            --ak-cyan: #00e5ff;   
             --ak-white: #f5f5f5;
-            --ak-gray: #888;
-            --ak-dark: #111;
-            --font-mono: 'Courier New', Courier, monospace;
+            --ak-gray: #555;
+            --font-mono: 'Consolas', 'Monaco', monospace;
         }
 
         body {
             margin: 0; padding: 0;
             background-color: var(--bg-color);
             color: var(--ak-white);
-            font-family: sans-serif;
+            font-family: "Noto Sans TC", sans-serif;
             height: 100vh;
+            overflow: hidden;
             display: flex; justify-content: center; align-items: center;
-            background-image: radial-gradient(#333 1px, transparent 1px);
-            background-size: 30px 30px;
         }
+
+        /* 動態網格背景 */
+        .bg-grid {
+            position: fixed; inset: 0;
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: -1;
+            transform: perspective(500px) rotateX(60deg);
+            transform-origin: top;
+            animation: gridMove 10s linear infinite;
+        }
+        @keyframes gridMove { from { background-position: 0 0; } to { background-position: 0 100px; } }
 
         .container {
-            width: 95%; max-width: 1100px; height: 85vh;
+            width: 95%; max-width: 1200px; height: 90vh;
             background: var(--panel-bg);
-            border: 1px solid #444;
+            border: 2px solid #333;
             display: flex; flex-direction: column;
             position: relative;
-            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 50px rgba(0,0,0,0.8);
         }
 
-        .header-bar {
-            height: 50px; background: #000; border-bottom: 3px solid var(--ak-yellow);
-            display: flex; align-items: center; padding: 0 20px; justify-content: space-between;
+        /* 狀態欄設計 */
+        .status-header {
+            height: 40px; background: #000;
+            display: flex; align-items: center; padding: 0 20px;
+            border-bottom: 2px solid var(--ak-yellow);
+            justify-content: space-between;
+            font-family: var(--font-mono); font-size: 12px;
         }
 
-        .screen { padding: 40px; display: none; flex-direction: column; flex: 1; overflow-y: auto; }
-        .screen.active { display: flex; }
+        /* 導覽區域（防止重疊） */
+        .nav-zone { display: flex; align-items: center; gap: 20px; }
+        .sys-info { color: var(--ak-yellow); letter-spacing: 1px; }
+        .net-status { color: var(--ak-cyan); }
 
-        /* Buttons & Tags */
-        .diff-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; margin-top: 50px; }
-        .ak-btn {
-            background: #222; border: 1px solid #444; color: #fff; padding: 30px;
-            cursor: pointer; transition: 0.2s; text-align: center; font-family: var(--font-mono);
+        .screen { padding: 40px; display: none; flex-direction: column; flex: 1; overflow-y: auto; position: relative; }
+        .screen.active { display: flex; animation: screenSwitch 0.3s ease-out; }
+        @keyframes screenSwitch { from { opacity: 0; filter: brightness(2); } to { opacity: 1; filter: brightness(1); } }
+
+        /* 難度卡片設計 */
+        .diff-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px; margin-top: 40px; }
+        .diff-card {
+            background: #151515; border: 1px solid #333; height: 180px;
+            cursor: pointer; position: relative; overflow: hidden;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            transition: 0.3s;
+            clip-path: polygon(15% 0, 100% 0, 100% 85%, 85% 100%, 0 100%, 0 15%);
         }
-        .ak-btn:hover { background: var(--ak-yellow); color: #000; }
+        .diff-card:hover { border-color: var(--ak-yellow); background: #222; transform: translateY(-5px); }
+        .diff-card .num { font-size: 4rem; font-weight: bold; color: rgba(255,255,255,0.05); position: absolute; }
+        .diff-card .label { font-family: var(--font-mono); font-weight: bold; font-size: 1.2rem; z-index: 1; }
 
-        .tag-grid { display: flex; flex-wrap: wrap; gap: 10px; margin: 20px 0; }
+        /* 標籤設計 */
+        .tag-grid { display: flex; flex-wrap: wrap; gap: 12px; margin: 30px 0; }
         .tag-btn {
-            background: #333; color: #ccc; border: none; padding: 10px 20px;
-            cursor: pointer; font-weight: bold; position: relative; transition: 0.1s;
+            background: rgba(255,255,255,0.1); color: #ccc; border: none; padding: 10px 25px;
+            cursor: pointer; font-weight: bold; position: relative; font-family: var(--font-mono);
+            clip-path: polygon(0 0, 90% 0, 100% 30%, 100% 100%, 10% 100%, 0 70%);
         }
-        
-        /* 白色選取狀態 */
         .tag-btn.active { background: var(--ak-white); color: #000; }
-        
-        /* 黃色互斥狀態 */
-        .tag-btn.exclusive { 
-            background: var(--ak-yellow) !important; color: #000 !important; 
-            box-shadow: 0 0 10px rgba(255,205,0,0.5);
-        }
-        .tag-btn.exclusive::after {
-            content: 'UNIQUE'; position: absolute; top: -10px; left: 0;
-            font-size: 9px; background: var(--ak-yellow); padding: 0 3px; color: #000;
-        }
+        .tag-btn.exclusive { background: var(--ak-yellow) !important; color: #000 !important; }
 
-        .action-btn {
-            background: var(--ak-cyan); color: #000; padding: 15px 40px;
-            border: none; font-weight: bold; cursor: pointer; font-size: 1.1rem;
-            clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);
-        }
-
+        /* 返回按鈕 */
         .back-btn {
-            position: absolute; top: 20px; right: 20px;
-            background: transparent; border: 1px solid #666; color: #666;
-            padding: 5px 15px; cursor: pointer; z-index: 10; font-family: var(--font-mono);
+            background: #333; color: #fff; border: none; padding: 8px 20px;
+            cursor: pointer; font-family: var(--font-mono); font-size: 12px;
+            transition: 0.2s;
         }
-        .back-btn:hover { border-color: #fff; color: #fff; }
+        .back-btn:hover { background: #ff4444; }
 
-        /* Results */
-        .result-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; margin-top: 20px; }
+        /* 部署按鈕 */
+        .deploy-btn {
+            background: var(--ak-cyan); color: #000; padding: 20px 60px;
+            border: none; font-weight: 900; cursor: pointer; font-size: 1.2rem;
+            clip-path: polygon(0 0, 95% 0, 100% 50%, 95% 100%, 0 100%);
+            transition: 0.2s;
+        }
+        .deploy-btn:hover { background: #fff; transform: scale(1.05); box-shadow: 0 0 20px var(--ak-cyan); }
+
+        /* 結果顯示 */
+        .result-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; margin-top: 30px; }
         .result-card {
-            background: rgba(0,0,0,0.6); border-left: 4px solid var(--ak-cyan);
-            padding: 15px; display: flex; flex-direction: column; gap: 5px;
-            animation: fadeIn 0.3s forwards;
+            background: rgba(255,255,255,0.05); border-left: 4px solid var(--ak-cyan);
+            padding: 20px; position: relative;
+            animation: cardSlide 0.4s ease-out backwards;
         }
-        @keyframes fadeIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes cardSlide { from { opacity: 0; transform: skewX(-20deg) translateX(-50px); } }
+        .result-card.gold-border { border-left-color: var(--ak-yellow); background: rgba(255,205,0,0.05); }
 
-        .tag-badge { font-size: 0.7rem; color: var(--ak-cyan); background: #222; padding: 2px 5px; margin-right: 4px; }
+        .tag-badge { font-size: 10px; color: var(--ak-cyan); border: 1px solid var(--ak-cyan); padding: 2px 6px; margin-right: 5px; text-transform: uppercase; }
 
         #loader {
-            position: absolute; inset: 0; background: #000; z-index: 100;
+            position: absolute; inset: 0; background: #000; z-index: 1000;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
         }
+        .loading-bar { width: 200px; height: 2px; background: #333; margin-top: 20px; overflow: hidden; }
+        .loading-progress { width: 40%; height: 100%; background: var(--ak-yellow); animation: loadMove 1.5s infinite; }
+        @keyframes loadMove { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
     </style>
 </head>
 <body>
 
+    <div class="bg-grid"></div>
+
     <div class="container">
-        <div class="header-bar">
-            <div style="font-family: var(--font-mono); color: var(--ak-yellow); font-weight: bold;">RHODES ISLAND // PRTS RECRUITMENT</div>
-            <div id="connection-status" style="font-size: 0.8rem; color: var(--ak-cyan);">STATUS: CONNECTING...</div>
+        <div class="status-header">
+            <div class="nav-zone">
+                <span class="sys-info">RHODES ISLAND // PRTS v4.0</span>
+                <span id="connection-status" class="net-status">CONNECTING...</span>
+            </div>
+            <div id="btn-abort-container" style="display:none;">
+                <button class="back-btn" onclick="goBack()">ABORT MISSION</button>
+            </div>
         </div>
 
         <div id="loader">
-            <div style="letter-spacing: 5px; font-weight: bold;">SYNCHRONIZING</div>
-            <div style="font-family: var(--font-mono); font-size: 10px; color: #555; margin-top: 5px;">ACCESSING NEURAL NETWORK...</div>
+            <div style="letter-spacing: 8px; font-weight: bold; font-family: var(--font-mono);">TERMINAL STARTING</div>
+            <div class="loading-bar"><div class="loading-progress"></div></div>
         </div>
 
         <div id="screen-difficulty" class="screen">
-            <h1 style="border-left: 5px solid var(--ak-yellow); padding-left: 15px; letter-spacing: 2px;">SELECT MISSION LEVEL</h1>
+            <div style="font-family: var(--font-mono); color: var(--ak-gray); margin-bottom: 10px;">>> SELECT PRIORITY LEVEL</div>
             <div class="diff-grid">
-                <div class="ak-btn" onclick="selectDifficulty(1)">LEVEL 01</div>
-                <div class="ak-btn" onclick="selectDifficulty(2)">LEVEL 02</div>
-                <div class="ak-btn" onclick="selectDifficulty(3)">LEVEL 03</div>
-                <div class="ak-btn" onclick="selectDifficulty(4)">LEVEL 04</div>
-                <div class="ak-btn" onclick="selectDifficulty(5)">LEVEL 05</div>
+                <div class="diff-card" onclick="selectDifficulty(1)"><span class="num">01</span><span class="label">LEVEL 01</span></div>
+                <div class="diff-card" onclick="selectDifficulty(2)"><span class="num">02</span><span class="label">LEVEL 02</span></div>
+                <div class="diff-card" onclick="selectDifficulty(3)"><span class="num">03</span><span class="label">LEVEL 03</span></div>
+                <div class="diff-card" onclick="selectDifficulty(4)"><span class="num">04</span><span class="label">LEVEL 04</span></div>
+                <div class="diff-card" onclick="selectDifficulty(5)"><span class="num">05</span><span class="label">LEVEL 05</span></div>
             </div>
         </div>
 
         <div id="screen-selector" class="screen">
-            <button class="back-btn" onclick="goBack()">ABORT MISSION //</button>
-            <h2 id="level-title" style="margin-top: 0;">CONFIGURATION</h2>
+            <div id="level-title" style="font-size: 2rem; font-weight: 900; letter-spacing: 2px; color: var(--ak-yellow);">LEVEL 01</div>
+            <div style="font-family: var(--font-mono); color: var(--ak-gray); margin-top: 20px;">>> TAG CONFIGURATION (WHI: INCLUDE / YEL: UNIQUE)</div>
             
-            <div style="color: var(--ak-gray); font-size: 0.8rem; font-family: var(--font-mono);">[ TAG SELECTION ] - 點擊切換：普通(白) / 唯一(黃) / 取消</div>
             <div id="tag-container" class="tag-grid"></div>
 
-            <div style="margin: 20px 0; border-top: 1px solid #333; padding-top: 20px; display: flex; align-items: center;">
-                <div style="display:flex; flex-direction:column;">
-                    <label style="font-size: 0.7rem; color: var(--ak-gray); font-family: var(--font-mono);">QUANTITY //</label>
-                    <input type="number" id="select-count" value="1" min="1" max="20" style="background:#000; color:#fff; border:none; border-bottom: 2px solid #fff; padding:5px; width:80px; font-size: 1.2rem; font-family: var(--font-mono);">
+            <div style="display: flex; align-items: flex-end; gap: 30px; margin-top: 30px;">
+                <div style="display: flex; flex-direction: column;">
+                    <span style="font-size: 10px; color: var(--ak-gray); font-family: var(--font-mono); margin-bottom: 5px;">REQ. COUNT</span>
+                    <input type="number" id="select-count" value="1" min="1" max="10" style="background: transparent; border: none; border-bottom: 2px solid #fff; color: #fff; font-size: 2rem; width: 80px; font-family: var(--font-mono); outline: none;">
                 </div>
-                <button class="action-btn" onclick="startSelection()" style="margin-left: 40px;">START DEPLOYMENT</button>
+                <button class="deploy-btn" onclick="startSelection()">START DEPLOYMENT</button>
             </div>
 
             <div id="result-container" class="result-container"></div>
@@ -145,163 +178,122 @@
     </div>
 
     <script>
-        // 配置你的 Google Sheet CSV 連結
         const GOOGLE_SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTcai40JqQblGoCCGQqcubG9qDhhbJg3E-l6WoIQaVSpbvWw13pn4A0ilOdGjZ-j50dKNRHI7BneAmc/pub?output=csv";
         
         let allData = [];
         let currentLevelData = [];
-        let tagStates = {}; // 0:無, 1:普通, 2:互斥
+        let tagStates = {}; 
 
-        // 初始化讀取
         window.onload = async () => {
             try {
                 const res = await fetch(GOOGLE_SHEET_URL);
-                if (!res.ok) throw new Error("Fetch failed");
                 const text = await res.text();
                 const rows = text.split(/\r?\n/).slice(1);
-                
                 allData = rows.map(r => {
                     const c = r.split(',');
-                    if (c.length < 2) return null;
-                    return { 
-                        name: c[0]?.trim(), 
-                        diff: parseInt(c[1]), 
-                        tag: c[2] ? c[2].trim() : "其他" 
-                    };
-                }).filter(i => i && i.name);
-
+                    return { name: c[0]?.trim(), diff: parseInt(c[1]), tag: c[2]?.trim() || "其他" };
+                }).filter(i => i.name && !isNaN(i.diff));
+                
                 document.getElementById('loader').style.display = 'none';
                 document.getElementById('screen-difficulty').classList.add('active');
                 document.getElementById('connection-status').innerText = "STATUS: ONLINE";
             } catch (e) {
-                document.getElementById('loader').innerText = "CONNECTION ERROR: Check Console";
+                document.getElementById('connection-status').innerText = "STATUS: ERROR";
                 console.error(e);
             }
         };
 
-        // 選擇難度並解析多標籤
         function selectDifficulty(lv) {
             currentLevelData = allData.filter(i => i.diff === lv);
-            if (currentLevelData.length === 0) {
-                alert("該難度暫無數據");
-                return;
-            }
-
             document.getElementById('screen-difficulty').classList.remove('active');
             document.getElementById('screen-selector').classList.add('active');
-            document.getElementById('level-title').innerText = `OPERATION LEVEL 0${lv}`;
+            document.getElementById('btn-abort-container').style.display = 'block';
+            document.getElementById('level-title').innerText = `LEVEL 0${lv} CONFIGURATION`;
             
-            // 重置狀態
             tagStates = {};
             document.getElementById('result-container').innerHTML = '';
 
-            // 解析該等級所有出現過的標籤 (支援空格隔開的多標籤)
             let rawTags = [];
-            currentLevelData.forEach(item => {
-                const splitTags = item.tag.split(/\s+/); 
-                rawTags = rawTags.concat(splitTags);
-            });
+            currentLevelData.forEach(item => { rawTags = rawTags.concat(item.tag.split(/\s+/)); });
             const tags = [...new Set(rawTags)].filter(t => t !== "");
 
             const container = document.getElementById('tag-container');
             container.innerHTML = '';
-
             tags.forEach(t => {
                 const btn = document.createElement('button');
                 btn.className = 'tag-btn';
                 btn.innerText = t;
                 btn.onclick = () => {
-                    // 三態切換邏輯
-                    if (!tagStates[t]) {
-                        tagStates[t] = 1; btn.classList.add('active');
-                    } else if (tagStates[t] === 1) {
-                        tagStates[t] = 2; btn.classList.remove('active'); btn.classList.add('exclusive');
-                    } else {
-                        delete tagStates[t]; btn.classList.remove('exclusive');
-                    }
+                    if (!tagStates[t]) { tagStates[t] = 1; btn.classList.add('active'); }
+                    else if (tagStates[t] === 1) { tagStates[t] = 2; btn.classList.remove('active'); btn.classList.add('exclusive'); }
+                    else { delete tagStates[t]; btn.classList.remove('exclusive'); }
                 };
                 container.appendChild(btn);
             });
         }
 
-        // 重置與返回
         function goBack() {
             document.getElementById('screen-selector').classList.remove('active');
             document.getElementById('screen-difficulty').classList.add('active');
+            document.getElementById('btn-abort-container').style.display = 'none';
             tagStates = {};
             document.getElementById('result-container').innerHTML = '';
-            document.getElementById('select-count').value = 1;
         }
 
-        // 輔助函式：檢查項目是否包含某個標籤
         function hasTag(item, targetTag) {
-            if (!item.tag) return false;
-            const itemTags = item.tag.split(/\s+/);
-            return itemTags.includes(targetTag);
+            return item.tag.split(/\s+/).includes(targetTag);
         }
 
-        // 執行隨機抽取
         function startSelection() {
             const count = parseInt(document.getElementById('select-count').value) || 1;
-            let results = [];
+            let finalResults = [];
             const selectedKeys = Object.keys(tagStates);
             const resContainer = document.getElementById('result-container');
             resContainer.innerHTML = '';
 
             if (selectedKeys.length === 0) {
-                // 若無選標籤，則從該難度全抽
-                results = [...currentLevelData];
+                finalResults = [...currentLevelData].sort(() => 0.5 - Math.random()).slice(0, count);
             } else {
                 const exTags = selectedKeys.filter(k => tagStates[k] === 2);
                 const normalTags = selectedKeys.filter(k => tagStates[k] === 1);
 
-                // 1. 處理黃色 (每個標籤僅出一個)
+                // 1. 唯一抽取：確保每個黃色標籤只會貢獻一個結果
                 exTags.forEach(t => {
-                    const matches = currentLevelData.filter(item => hasTag(item, t));
-                    if (matches.length) {
-                        const randomOne = matches[Math.floor(Math.random() * matches.length)];
-                        if (!results.includes(randomOne)) results.push(randomOne);
+                    const matches = currentLevelData.filter(item => hasTag(item, t) && !finalResults.includes(item));
+                    if (matches.length > 0) {
+                        finalResults.push(matches[Math.floor(Math.random() * matches.length)]);
                     }
                 });
 
-                // 2. 處理白色 (普通聯集池)
-                if (normalTags.length > 0) {
+                // 2. 補充抽取：從白色標籤池中補齊剩餘數量
+                if (finalResults.length < count) {
                     const pool = currentLevelData.filter(item => {
-                        const isMatch = normalTags.some(t => hasTag(item, t));
-                        return isMatch && !results.includes(item);
+                        const matchNormal = normalTags.some(t => hasTag(item, t));
+                        return matchNormal && !finalResults.includes(item);
                     });
-                    results = [...results, ...pool];
+                    const shuffledPool = pool.sort(() => 0.5 - Math.random());
+                    while (finalResults.length < count && shuffledPool.length > 0) {
+                        finalResults.push(shuffledPool.shift());
+                    }
                 }
             }
 
-            // 洗牌並依照需求數量取樣
-            const final = results.sort(() => 0.5 - Math.random()).slice(0, count);
-            
-            if (final.length === 0) {
-                resContainer.innerHTML = '<div style="color:var(--ak-yellow)">NO MATCHING DATA FOUND</div>';
-                return;
-            }
-
-            final.forEach((i, idx) => {
+            finalResults.forEach((i, idx) => {
                 setTimeout(() => {
                     const div = document.createElement('div');
-                    div.className = 'result-card';
+                    const isExMatch = selectedKeys.filter(k => tagStates[k] === 2).some(t => hasTag(i, t));
+                    div.className = `result-card ${isExMatch ? 'gold-border' : ''}`;
                     
-                    // 如果該項目的標籤中有包含任何「黃色選中標籤」，則框線變黃
-                    const containsEx = selectedKeys.filter(k => tagStates[k] === 2).some(t => hasTag(i, t));
-                    if (containsEx) div.style.borderColor = 'var(--ak-yellow)';
-
-                    // 生成標籤小徽章
                     const badges = i.tag.split(/\s+/).map(t => `<span class="tag-badge">${t}</span>`).join('');
-
                     div.innerHTML = `
-                        <div style="font-weight:bold; font-size:1.1rem; letter-spacing:1px;">${i.name}</div>
+                        <div style="font-weight:900; font-size:1.2rem; margin-bottom:8px;">${i.name}</div>
                         <div>${badges}</div>
                     `;
                     resContainer.appendChild(div);
-                }, idx * 50);
+                }, idx * 100);
             });
         }
     </script>
 </body>
 </html>
+
