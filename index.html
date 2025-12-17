@@ -7,22 +7,24 @@
     <style>
 		/* 互斥選擇狀態 - 變為黃色 */
 		.tag-btn.exclusive {
-    		background: var(--ak-yellow) !important;
-    		color: #000 !important;
-    		box-shadow: 0 0 12px rgba(255, 205, 0, 0.6);
-}
+			background: var(--ak-yellow) !important;
+			color: #000 !important;
+			box-shadow: 0 0 12px rgba(255, 205, 0, 0.6);
+		}
 
-/* 在黃色 Tag 上方加個小標籤提示 */
+		/* 在黃色 Tag 上方加個小標籤提示 */
+		
 		.tag-btn.exclusive::before {
-    		content: 'UNIQUE';
-   			position: absolute;
-    		top: -12px;
-    		left: 0;
-    		font-size: 8px;
-    		background: var(--ak-yellow);
-    		color: #000;
-    		padding: 0 2px;
-}
+			content: 'UNIQUE';
+			position: absolute;
+			top: -12px;
+			left: 0;
+			font-size: 8px;
+			background: var(--ak-yellow);
+			color: #000;
+			padding: 0 2px;
+		}
+		
         /* --- Arknights Theme Variables --- */
         :root {
             --bg-color: #1a1a1a;
@@ -480,7 +482,7 @@
     if (allData.length === 0) {
         throw new Error("資料解析後為空，請檢查試算表內容格式。");
     }
-}
+	}
 
         function selectDifficulty(level) {
             // 1. 篩選難度
@@ -526,98 +528,97 @@
             updateTagMessage();
         }
 
-        // 1. 修改儲存結構：現在需要儲存 Tag 的狀態 (0:未選, 1:普通, 2:互斥)
-let tagStates = {}; // 格式: { "男性": 1, "重裝": 2 }
+       // 1. 修改儲存結構：現在需要儲存 Tag 的狀態 (0:未選, 1:普通, 2:互斥)
+		let tagStates = {}; // 格式: { "男性": 1, "重裝": 2 }
 
-// 2. 修改點擊 Tag 的邏輯
-function toggleTag(btn, tag) {
-    if (!tagStates[tag]) {
-        // 狀態 0 -> 1 (普通選擇)
-        tagStates[tag] = 1;
-        btn.classList.add('active');
-        btn.classList.remove('exclusive');
-    } else if (tagStates[tag] === 1) {
-        // 狀態 1 -> 2 (互斥選擇/黃色)
-        tagStates[tag] = 2;
-        btn.classList.remove('active');
-        btn.classList.add('exclusive');
-    } else {
-        // 狀態 2 -> 0 (取消選擇)
-        delete tagStates[tag];
-        btn.classList.remove('active');
-        btn.classList.remove('exclusive');
-    }
-    updateTagMessage();
-}
+		// 2. 修改點擊 Tag 的邏輯
+		function toggleTag(btn, tag) {
+			if (!tagStates[tag]) {
+				// 狀態 0 -> 1 (普通選擇)
+				tagStates[tag] = 1;
+				btn.classList.add('active');
+				btn.classList.remove('exclusive');
+			} else if (tagStates[tag] === 1) {
+				// 狀態 1 -> 2 (互斥選擇/黃色)
+				tagStates[tag] = 2;
+				btn.classList.remove('active');
+				btn.classList.add('exclusive');
+			} else {
+				// 狀態 2 -> 0 (取消選擇)
+				delete tagStates[tag];
+				btn.classList.remove('active');
+				btn.classList.remove('exclusive');
+			}
+			updateTagMessage();
+		}
 
-// 3. 核心功能：修改抽取邏輯
-function startSelection() {
-    const container = document.getElementById('result-container');
-    container.innerHTML = '';
+		// 3. 核心功能：修改抽取邏輯
+		function startSelection() {
+			const container = document.getElementById('result-container');
+			container.innerHTML = '';
 
-    const selectedKeys = Object.keys(tagStates);
-    const countInput = document.getElementById('select-count');
-    let totalNeeded = parseInt(countInput.value) || 1;
+			const selectedKeys = Object.keys(tagStates);
+			const countInput = document.getElementById('select-count');
+			let totalNeeded = parseInt(countInput.value) || 1;
 
-    let finalResults = [];
+			let finalResults = [];
 
-    if (selectedKeys.length === 0) {
-        // 沒選 Tag：直接從該難度全抽
-        finalResults = [...currentLevelData].sort(() => 0.5 - Math.random()).slice(0, totalNeeded);
-    } else {
-        const exclusiveTags = selectedKeys.filter(t => tagStates[t] === 2);
-        const normalTags = selectedKeys.filter(t => tagStates[t] === 1);
+			if (selectedKeys.length === 0) {
+				// 沒選 Tag：直接從該難度全抽
+				finalResults = [...currentLevelData].sort(() => 0.5 - Math.random()).slice(0, totalNeeded);
+			} else {
+				const exclusiveTags = selectedKeys.filter(t => tagStates[t] === 2);
+				const normalTags = selectedKeys.filter(t => tagStates[t] === 1);
 
-        // --- 第一步：處理黃色 (Exclusive) Tag ---
-        exclusiveTags.forEach(tag => {
-            let matches = currentLevelData.filter(item => item.tag === tag);
-            if (matches.length > 0) {
-                // 每個黃色 Tag 只隨機取一個
-                let randomOne = matches[Math.floor(Math.random() * matches.length)];
-                finalResults.push(randomOne);
-            }
-        });
+				// --- 第一步：處理黃色 (Exclusive) Tag ---
+				exclusiveTags.forEach(tag => {
+					let matches = currentLevelData.filter(item => item.tag === tag);
+					if (matches.length > 0) {
+						// 每個黃色 Tag 只隨機取一個
+						let randomOne = matches[Math.floor(Math.random() * matches.length)];
+						finalResults.push(randomOne);
+					}
+				});
 
-        // --- 第二步：處理普通 Tag 並填補剩餘數量 ---
-        // 找出所有符合普通 Tag 的剩餘候選名單 (且不重複包含已選中的對象)
-        let remainingPool = currentLevelData.filter(item => 
-            normalTags.includes(item.tag) && !finalResults.includes(item)
-        );
+				// --- 第二步：處理普通 Tag 並填補剩餘數量 ---
+				// 找出所有符合普通 Tag 的剩餘候選名單 (且不重複包含已選中的對象)
+				let remainingPool = currentLevelData.filter(item => 
+					normalTags.includes(item.tag) && !finalResults.includes(item)
+				);
 
-        // 洗牌剩餘池
-        let shuffledPool = remainingPool.sort(() => 0.5 - Math.random());
-        
-        // 填補直到達到使用者要求的數量
-        while (finalResults.length < totalNeeded && shuffledPool.length > 0) {
-            finalResults.push(shuffledPool.shift());
-        }
-    }
+				// 洗牌剩餘池
+				let shuffledPool = remainingPool.sort(() => 0.5 - Math.random());
+				
+				// 填補直到達到使用者要求的數量
+				while (finalResults.length < totalNeeded && shuffledPool.length > 0) {
+					finalResults.push(shuffledPool.shift());
+				}
+			}
 
-    // --- 第三步：渲染結果 ---
-    if (finalResults.length === 0) {
-        container.innerHTML = '<div style="color:red; padding:20px;">ERROR: NO MATCHING DATA</div>';
-        return;
-    }
+			// --- 第三步：渲染結果 ---
+			if (finalResults.length === 0) {
+				container.innerHTML = '<div style="color:red; padding:20px;">ERROR: NO MATCHING DATA</div>';
+				return;
+			}
 
-    finalResults.forEach((item, index) => {
-        setTimeout(() => {
-            const div = document.createElement('div');
-            div.className = 'result-card';
-            // 如果是互斥抽出的，給個不同的邊框色
-            if (tagStates[item.tag] === 2) div.style.borderColor = 'var(--ak-yellow)';
-            
-            div.innerHTML = `
-                <div>
-                    <span style="font-weight:900; font-size:1.1rem">${item.name}</span>
-                    <span class="result-tag-badge" style="${tagStates[item.tag] === 2 ? 'color:var(--ak-yellow)' : ''}">${item.tag}</span>
-                </div>
-                <div style="font-family:monospace; color:#666; font-size:0.8rem">L${item.difficulty}</div>
-            `;
-            container.appendChild(div);
-        }, index * 100);
-    });
-}
+			finalResults.forEach((item, index) => {
+				setTimeout(() => {
+					const div = document.createElement('div');
+					div.className = 'result-card';
+					// 如果是互斥抽出的，給個不同的邊框色
+					if (tagStates[item.tag] === 2) div.style.borderColor = 'var(--ak-yellow)';
+					
+					div.innerHTML = `
+						<div>
+							<span style="font-weight:900; font-size:1.1rem">${item.name}</span>
+							<span class="result-tag-badge" style="${tagStates[item.tag] === 2 ? 'color:var(--ak-yellow)' : ''}">${item.tag}</span>
+						</div>
+						<div style="font-family:monospace; color:#666; font-size:0.8rem">L${item.difficulty}</div>
+					`;
+					container.appendChild(div);
+				}, index * 100);
+			});
+		}
     </script>
 </body>
-
 </html>
