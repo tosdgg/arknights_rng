@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PRTS // Recruitment Terminal</title>
+    <style>
+        /* --- Arknights Theme Variables --- */
+        :root {
+            --bg-color: #1a1a1a;
+            --panel-bg: rgba(30, 30, 30, 0.95);
+            --ak-yellow: #ffcd00; 
+            --ak-cyan: #23c7d6;   
+            --ak-white: #f5f5f5;
+            --ak-gray: #888;
+            --ak-dark: #111;
+            --font-main: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            --font-mono: 'Courier New', Courier, monospace;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--ak-white);
+            font-family: var(--font-main);
+            overflow: hidden;
+            background-image: 
+                linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8)),
+                repeating-linear-gradient(45deg, #222 0, #222 1px, transparent 0, transparent 50%);
+            background-size: 30px 30px;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* --- Layout --- */
+        .container {
+            width: 90%;
+            max-width: 1000px;
+            height: 85vh;
+            position: relative;
+            border: 1px solid #444;
+            background: var(--panel-bg);
+            box-shadow: 0 0 30px rgba(0,0,0,0.9);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header-bar {
+            height: 60px;
+            background: var(--ak-dark);
+            border-bottom: 3px solid var(--ak-yellow);
+            display: flex;
+            align-items: center;
+            padding: 0 30px;
+            justify-content: space-between;
+        }
+
+        .logo-text {
+            font-family: var(--font-mono);
+            font-weight: 900;
+            letter-spacing: 2px;
+            font-size: 1.2rem;
+        }
+
+        /* --- Screens --- */
+        .screen {
+            flex: 1;
+            padding: 40px;
+            display: none;
+            flex-direction: column;
+            animation: fadeIn 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+            position: relative;
+            overflow-y: auto; /* Allow scroll if content is tall */
+        }
+
+        .screen.active { display: flex; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- Difficulty Page --- */
+        h1 {
+            text-transform: uppercase;
+            font-size: 2rem;
+            border-left: 6px solid var(--ak-yellow);
+            padding-left: 20px;
+            margin: 0 0 30px 0;
+            letter-spacing: 2px;
+        }
+
+        .diff-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+            margin: auto 0;
+        }
+
+        .diff-card {
+            height: 220px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid #444;
+            color: var(--ak-white);
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: 0.2s;
+            clip-path: polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px);
+            position: relative;
+        }
+
+        .diff-card:hover {
+            background: var(--ak-yellow);
+            color: var(--ak-dark);
+            border-color: var(--ak-yellow);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(255, 205, 0, 0.2);
+        }
+
+        .diff-num { font-size: 3.5rem; font-weight: 900; opacity: 0.2; }
+        .diff-label { font-size: 1.2rem; font-weight: bold; margin-top: 10px; text-transform: uppercase; }
+
+        /* --- Selector Page (Recruitment Style) --- */
+        .section-label {
+            font-family: var(--font-mono);
+            color: var(--ak-gray);
+            font-size: 0.8rem;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        /* Tag System */
+        .tag-area {
+            background: rgba(0,0,0,0.3);
+            padding: 20px;
+            border: 1px solid #444;
+            margin-bottom: 25px;
+        }
+
+        .tag-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .tag-btn {
+            background: #333;
+            color: #ccc;
+            border: none;
+            padding: 8px 16px;
+            font-family: var(--font-main);
+            font-weight: bold;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: 0.1s;
+            position: relative;
+            min-width: 80px;
+            text-align: center;
+        }
+        
+        /* Arknights Selected Tag Style */
+        .tag-btn:hover { background: #444; }
+        
+        .tag-btn.active {
+            background: var(--ak-white);
+            color: #000;
+            box-shadow: 0 0 8px rgba(255,255,255,0.5);
+        }
+        
+        /* Tag decoration (tiny triangle) */
+        .tag-btn::after {
+            content: '';
+            position: absolute;
+            top: 0; right: 0;
+            border-width: 0 6px 6px 0;
+            border-style: solid;
+            border-color: transparent #111 transparent transparent;
+        }
+
+        /* Controls */
+        .control-row {
+            display: flex;
+            align-items: flex-end;
+            gap: 30px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #444;
+            padding-bottom: 20px;
+        }
+
+        input[type="number"] {
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid var(--ak-white);
+            color: var(--ak-white);
+            font-size: 2rem;
+            width: 80px;
+            font-family: var(--font-mono);
+            text-align: center;
+        }
+        input[type="number"]:focus { outline: none; border-color: var(--ak-yellow); }
+
+        .action-btn {
+            background: var(--ak-yellow);
+            color: var(--ak-dark);
+            font-weight: 900;
+            border: none;
+            height: 50px;
+            padding: 0 40px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            letter-spacing: 1px;
+            clip-path: polygon(10px 0, 100% 0, 100% 100%, 0 100%, 0 10px);
+        }
+        .action-btn:active { transform: scale(0.98); }
+
+        .back-btn {
+            position: absolute;
+            top: 40px; right: 40px;
+            background: transparent;
+            border: 1px solid var(--ak-gray);
+            color: var(--ak-gray);
+            padding: 5px 15px;
+            cursor: pointer;
+            font-family: var(--font-mono);
+        }
+        .back-btn:hover { border-color: var(--ak-white); color: var(--ak-white); }
+
+        /* Results */
+        .results-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .result-card {
+            background: #222;
+            border-left: 4px solid var(--ak-cyan);
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            animation: slideIn 0.3s ease-out forwards;
+            opacity: 0;
+        }
+        
+        .result-tag-badge {
+            font-size: 0.7rem;
+            background: #333;
+            padding: 2px 6px;
+            color: var(--ak-cyan);
+            margin-left: 10px;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(-20px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* Loader */
+        #loader {
+            position: absolute;
+            inset: 0;
+            background: #000;
+            z-index: 999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: var(--ak-white);
+        }
+        .loader-bar {
+            width: 200px;
+            height: 4px;
+            background: #333;
+            margin-top: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        .loader-bar::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; height: 100%; width: 50%;
+            background: var(--ak-yellow);
+            animation: load 2s infinite ease-in-out;
+        }
+        @keyframes load { 0% {left: -50%} 100% {left: 100%} }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header-bar">
+            <div class="logo-text">RHODES ISLAND <span style="color:var(--ak-yellow)">//</span> RECRUITMENT</div>
+            <div style="font-family:var(--font-mono); font-size:0.8rem; color:var(--ak-cyan)">SYS.VER.3.0</div>
+        </div>
+
+        <div id="loader">
+            <div style="font-weight:900; letter-spacing:5px; font-size:24px;">NEURAL NETWORK</div>
+            <div style="font-family:var(--font-mono); font-size:12px; margin-top:10px; color:#888;">SYNCHRONIZING DATABASE...</div>
+            <div class="loader-bar"></div>
+        </div>
+
+        <div id="screen-difficulty" class="screen">
+            <h1>Select Priority Level</h1>
+            <p class="section-label">// 請選擇資料庫層級 (DIFFICULTY)</p>
+            
+            <div class="diff-grid">
+                <button class="diff-card" onclick="selectDifficulty(1)">
+                    <div class="diff-num">01</div>
+                    <div class="diff-label">Level 1</div>
+                </button>
+                <button class="diff-card" onclick="selectDifficulty(2)">
+                    <div class="diff-num">02</div>
+                    <div class="diff-label">Level 2</div>
+                </button>
+                <button class="diff-card" onclick="selectDifficulty(3)">
+                    <div class="diff-num">03</div>
+                    <div class="diff-label">Level 3</div>
+                </button>
+                <button class="diff-card" onclick="selectDifficulty(4)">
+                    <div class="diff-num">04</div>
+                    <div class="diff-label">Level 4</div>
+                </button>
+                <button class="diff-card" onclick="selectDifficulty(5)">
+                    <div class="diff-num">05</div>
+                    <div class="diff-label">Level 5</div>
+                </button>
+            </div>
+        </div>
+
+        <div id="screen-selector" class="screen">
+            <button class="back-btn" onclick="goBack()"> &lt; ABORT MISSION</button>
+            
+            <h1 id="page-title">LEVEL ? - CONFIGURATION</h1>
+
+            <div class="tag-area">
+                <span class="section-label">TAG CONFIGURATION (COLUMN C) // 多選</span>
+                <div id="tag-container" class="tag-grid">
+                    </div>
+                <div id="tag-msg" style="margin-top:10px; font-size:0.8rem; color:var(--ak-yellow); display:none;">
+                    * 未選擇任何 Tag，將從該難度所有條目中隨機抽取。
+                </div>
+            </div>
+
+            <div class="control-row">
+                <div>
+                    <span class="section-label">RECRUIT COUNT //</span>
+                    <input type="number" id="select-count" value="1" min="1" max="10">
+                </div>
+                <button class="action-btn" onclick="startSelection()">START RECRUITMENT</button>
+            </div>
+
+            <span class="section-label">SEARCH RESULTS //</span>
+            <div id="result-container" class="results-container"></div>
+        </div>
+    </div>
+
+    <script>
+        // ================= CONFIGURATION =================
+        // 替換為你的 Google Sheet CSV 連結
+        // 格式要求：A欄=名稱, B欄=難度(1-5), C欄=標籤(Tag)
+        const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTcai40JqQblGoCCGQqcubG9qDhhbJg3E-l6WoIQaVSpbvWw13pn4A0ilOdGjZ-j50dKNRHI7BneAmc/pub?output=csv"; 
+        const useMockData = false; // 正式使用時改為 false
+        // =================================================
+
+        let allData = [];
+        let currentLevelData = [];
+        let selectedTags = new Set(); // 儲存使用者勾選的 Tag
+
+        // 模擬資料 (展示 C 欄用途)
+        const mockData = [
+            { name: "預備幹員", difficulty: 1, tag: "男性" }, 
+            { name: "芬", difficulty: 1, tag: "女性" },
+            { name: "玫蘭莎", difficulty: 2, tag: "女性" }, 
+            { name: "史都華德", difficulty: 2, tag: "男性" },
+            { name: "阿米婭", difficulty: 3, tag: "女性" }, 
+            { name: "安賽爾", difficulty: 3, tag: "男性" },
+            { name: "銀灰", difficulty: 4, tag: "男性" }, 
+            { name: "能天使", difficulty: 4, tag: "女性" },
+            { name: "角峰", difficulty: 4, tag: "重裝" }, 
+            { name: "臨光", difficulty: 4, tag: "重裝" },
+            { name: "假日威龍陳", difficulty: 5, tag: "女性" }, 
+            { name: "瑪恩納", difficulty: 5, tag: "男性" },
+            { name: "泥岩", difficulty: 5, tag: "重裝" }
+        ];
+
+        window.onload = async () => {
+            if (useMockData) {
+                setTimeout(() => { allData = mockData; initComplete(); }, 1000);
+            } else {
+                try {
+                    await fetchSheetData();
+                    initComplete();
+                } catch (e) {
+                    alert("Data Load Error");
+                    console.error(e);
+                }
+            }
+        };
+
+        function initComplete() {
+            document.getElementById('loader').style.display = 'none';
+            document.getElementById('screen-difficulty').classList.add('active');
+        }
+
+        // 替換原本的 fetchSheetData 函式
+	async function fetchSheetData() {
+    console.log("正在嘗試連線至:", GOOGLE_SHEET_CSV_URL);
+    
+    const response = await fetch(GOOGLE_SHEET_CSV_URL);
+    
+    // 檢查連線狀態
+    if (!response.ok) {
+        throw new Error(`伺服器回應錯誤: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.text();
+    console.log("取得原始資料:", data); // 在 F12 Console 可以看到抓到了什麼
+
+    // 檢查是否抓到了 HTML 網頁而不是 CSV (常見錯誤)
+    if (data.trim().startsWith("<!DOCTYPE html>") || data.includes("<html")) {
+        throw new Error("抓取到的是網頁而非 CSV，請檢查連結結尾是否為 output=csv，且權限已公開。");
+    }
+
+    const rows = data.split(/\r\n|\n/); // 更嚴謹的換行切割
+    
+    // 解析資料
+    allData = rows.slice(1).map((row, index) => {
+        // 使用簡單的正則表達式處理逗號 (避免切到名稱裡的逗號)
+        // 如果你的資料很簡單，用 row.split(',') 也可以
+        const cols = row.split(','); 
+
+        if(cols.length >= 2) {
+            // 安全處理：去除前後空白
+            const name = cols[0] ? cols[0].trim() : "";
+            const diffStr = cols[1] ? cols[1].trim() : "1";
+            const tagStr = cols[2] ? cols[2].trim() : "其他";
+
+            // 跳過空行
+            if (!name) return null;
+
+            return {
+                name: name,
+                difficulty: parseInt(diffStr) || 1, // 如果轉換失敗預設為 1
+                tag: tagStr || "其他"
+            };
+        }
+        return null;
+    }).filter(item => item !== null); // 過濾掉失敗的解析
+
+    console.log("解析完成，資料筆數:", allData.length);
+    
+    if (allData.length === 0) {
+        throw new Error("資料解析後為空，請檢查試算表內容格式。");
+    }
+}
+
+        function selectDifficulty(level) {
+            // 1. 篩選難度
+            currentLevelData = allData.filter(item => item.difficulty === level);
+            
+            if(currentLevelData.length === 0 && !useMockData) {
+                alert("此難度無資料");
+                return;
+            }
+
+            // 2. 切換頁面
+            document.getElementById('screen-difficulty').classList.remove('active');
+            document.getElementById('screen-selector').classList.add('active');
+            document.getElementById('page-title').innerText = `LEVEL 0${level} - CONFIGURATION`;
+
+            // 3. 初始化 Tag 系統
+            selectedTags.clear(); // 清除之前的選擇
+            renderTagsForLevel(); // 產生按鈕
+            document.getElementById('result-container').innerHTML = ''; // 清空結果
+        }
+
+        // 動態生成該難度下所有的標籤按鈕
+        function renderTagsForLevel() {
+            const tagContainer = document.getElementById('tag-container');
+            tagContainer.innerHTML = '';
+            
+            // 抓出所有不重複的 tag
+            const uniqueTags = [...new Set(currentLevelData.map(item => item.tag))];
+            
+            if(uniqueTags.length === 0) {
+                tagContainer.innerHTML = '<span style="color:#666">// NO TAGS AVAILABLE</span>';
+                return;
+            }
+
+            uniqueTags.forEach(tag => {
+                const btn = document.createElement('button');
+                btn.className = 'tag-btn';
+                btn.innerText = tag;
+                btn.onclick = () => toggleTag(btn, tag);
+                tagContainer.appendChild(btn);
+            });
+            
+            updateTagMessage();
+        }
+
+        // 點擊 Tag 按鈕
+        function toggleTag(btn, tag) {
+            if(selectedTags.has(tag)) {
+                selectedTags.delete(tag);
+                btn.classList.remove('active');
+            } else {
+                selectedTags.add(tag);
+                btn.classList.add('active');
+            }
+            updateTagMessage();
+        }
+
+        function updateTagMessage() {
+            const msg = document.getElementById('tag-msg');
+            if(selectedTags.size === 0) {
+                msg.style.display = 'block';
+                msg.innerText = "* 未選擇任何 Tag，將從該難度所有條目中隨機抽取。";
+            } else {
+                // 計算符合條件的數量預覽
+                const count = currentLevelData.filter(item => selectedTags.has(item.tag)).length;
+                msg.style.display = 'block';
+                msg.innerText = `* 已選擇 ${selectedTags.size} 個標籤，符合條件條目數: ${count}`;
+            }
+        }
+
+        function goBack() {
+            document.getElementById('screen-selector').classList.remove('active');
+            document.getElementById('screen-difficulty').classList.add('active');
+        }
+
+        function startSelection() {
+            const container = document.getElementById('result-container');
+            container.innerHTML = '';
+
+            // 1. 根據 Tag 進行二次篩選
+            let pool = [];
+            if (selectedTags.size === 0) {
+                // 如果沒選 Tag，預設為「全選」 (從該難度全部抽)
+                pool = currentLevelData;
+            } else {
+                // 只保留符合被選中 Tag 的項目
+                pool = currentLevelData.filter(item => selectedTags.has(item.tag));
+            }
+
+            if (pool.length === 0) {
+                container.innerHTML = '<div style="color:red; padding:20px;">ERROR: NO OPERATORS FOUND WITH SELECTED TAGS</div>';
+                return;
+            }
+
+            // 2. 隨機邏輯
+            const countInput = document.getElementById('select-count');
+            let count = parseInt(countInput.value);
+            if (count < 1) count = 1;
+            
+            // 洗牌
+            const shuffled = [...pool].sort(() => 0.5 - Math.random());
+            // 取出
+            const selected = shuffled.slice(0, count);
+
+            // 3. 顯示結果
+            selected.forEach((item, index) => {
+                setTimeout(() => {
+                    const div = document.createElement('div');
+                    div.className = 'result-card';
+                    div.innerHTML = `
+                        <div>
+                            <span style="font-weight:900; font-size:1.1rem">${item.name}</span>
+                            <span class="result-tag-badge">${item.tag}</span>
+                        </div>
+                        <div style="font-family:monospace; color:#666; font-size:0.8rem">
+                            L${item.difficulty}
+                        </div>
+                    `;
+                    container.appendChild(div);
+                }, index * 100);
+            });
+        }
+    </script>
+</body>
+</html>
