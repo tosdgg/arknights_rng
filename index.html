@@ -96,11 +96,14 @@
 
 <script>
     // --- 這裡就是你要的兩行數據路徑 ---
+   // --- 核心數據節點 ---
     const CONTRACT_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTcai40JqQblGoCCGQqcubG9qDhhbJg3E-l6WoIQaVSpbvWw13pn4A0ilOdGjZ-j50dKNRHI7BneAmc/pub?gid=0&output=csv";
     const LOCATION_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTcai40JqQblGoCCGQqcubG9qDhhbJg3E-l6WoIQaVSpbvWw13pn4A0ilOdGjZ-j50dKNRHI7BneAmc/pub?gid=754158994&output=csv";
 
+    // 系統狀態變數
     let db_contracts = [];
-    let db_locations = [];
+    let db_locations = [];      // 升級：儲存 { name, risk }
+    let state_map_risk = 0;     // 升級：新增全域變數，鎖定當前地圖權重
     let state_current_level_items = [], state_tags = {};
     let state_slots = [[], [], []], current_slot_idx = 0;
     let current_results = [];
@@ -110,19 +113,91 @@
         renderDifficultyCards();
     };
 
+    // 1. 初始化系統：同步 B 欄分數資料
     async function initSystem() {
         try {
             const [cRes, lRes] = await Promise.all([fetch(CONTRACT_URL), fetch(LOCATION_URL)]);
             const cText = await cRes.text();
             const lText = await lRes.text();
+
+            // 解析合約 (Sheet 1)
             db_contracts = cText.split(/\r?\n/).slice(1).map((r, idx) => {
                 const cols = r.split(',');
-                return { name: cols[0]?.trim(), diff: parseInt(cols[1]), tag: cols[2]?.trim() || "其他", row: idx + 2 };
+                return { 
+                    name: cols[0]?.trim(), 
+                    diff: parseInt(cols[1]), 
+                    tag: cols[2]?.trim() || "其他", 
+                    row: idx + 2 
+                };
             }).filter(i => i.name && !isNaN(i.diff));
-            db_locations = lText.split(/\r?\n/).slice(1).map(r => r.split(',')[0]?.trim()).filter(i => i);
-        } catch (e) { console.error("PRTS: Data Sync Failed."); }
+
+            // 解析地圖 (Sheet 2: gid=754158994)
+            // 修改點：讀取第二欄 cols[1] 作為基礎風險值
+            db_locations = lText.split(/\r?\n/).slice(1).map(r => {
+                const cols = r.split(',');
+                return {
+                    name: cols[0]?.replace(/"/g, '')?.trim(),
+                    risk: parseInt(cols[1]) || 0  // 讀取 B 欄分數
+                };
+            }).filter(i => i.name);
+
+            console.log("PRTS: Neural Link Established. Maps Loaded:", db_locations.length);
+        } catch (e) { 
+            console.error("PRTS: Data Sync Failed.", e); 
+        }
     }
 
+    // 2. 戰場定位：抽取地圖並鎖定分數
+    function acquireTarget() {
+        if (db_locations.length === 0) return;
+        const roll = db_locations[Math.floor(Math.random() * db_locations.length)];
+        
+        // 僅修改內容顯示，不改動 UI 樣式
+        document.getElementById('target-display').innerText = roll.name;
+        
+        // 核心更新：更新全域地圖風險值
+        state_map_risk = roll.risk;
+        
+        // 每次換地圖都重新結算總分
+        updateSidebarUI();
+    }
+
+    // 3. 風險結算：合併計算合約等級與地圖權重
+    function updateSidebarUI() {
+        const list = document.getElementById('sidebar-list');
+        const riskFill = document.getElementById('risk-fill');
+        list.innerHTML = '';
+        
+        let contractTotal = 0;
+        
+        // 計算已鎖定合約的等級總和
+        state_slots[current_slot_idx].sort((a,b)=>a.diff-b.diff).forEach(i => {
+            contractTotal += i.diff;
+            const d = document.createElement('div');
+            d.style = "font-size:11px; padding:5px 0; border-bottom:1px solid #222;";
+            d.innerHTML = `<span style="color:var(--ak-red)">[LV.${i.diff}]</span> ${i.name}`;
+            list.appendChild(d);
+        });
+
+        // 核心邏輯：總分 = 合約總分 + 地圖基礎分 (支援負分)
+        const finalRisk = contractTotal + state_map_risk;
+
+        // 更新數字顯示 (保持 .padStart(2, '0') 格式，但負號會自動處理)
+        const riskVal = document.getElementById('total-risk');
+        if (finalRisk < 0) {
+            riskVal.innerText = finalRisk; // 負分直接顯示，如 -5
+            riskVal.style.color = "var(--ak-cyan)"; // 負分時轉為青色，代表環境利好
+        } else {
+            riskVal.innerText = finalRisk.toString().padStart(2, '0');
+            riskVal.style.color = "var(--ak-yellow)"; // 正分保持黃色
+        }
+
+        // 更新進度條 (最小為 0%，避免負分導致進度條反向)
+        const percentage = Math.max(0, (finalRisk / 30) * 100);
+        riskFill.style.width = Math.min(100, percentage) + "%";
+    }
+
+    // --- 以下為 v9.2 原有的 UI 邏輯，不做任何變動 ---
     function renderDifficultyCards() {
         const container = document.getElementById('diff-container');
         container.innerHTML = '';
@@ -218,33 +293,11 @@
         updateSidebarUI();
     }
 
-    function updateSidebarUI() {
-        const list = document.getElementById('sidebar-list');
-        const riskFill = document.getElementById('risk-fill');
-        list.innerHTML = '';
-        let total = 0;
-        state_slots[current_slot_idx].sort((a,b)=>a.diff-b.diff).forEach(i => {
-            total += i.diff;
-            const d = document.createElement('div');
-            d.style = "font-size:11px; padding:5px 0; border-bottom:1px solid #222;";
-            d.innerHTML = `<span style="color:var(--ak-red)">[LV.${i.diff}]</span> ${i.name}`;
-            list.appendChild(d);
-        });
-        document.getElementById('total-risk').innerText = total.toString().padStart(2, '0');
-        riskFill.style.width = Math.min(100, (total / 30) * 100) + "%";
-    }
-
     function switchSlot(idx) {
         current_slot_idx = idx;
         document.querySelectorAll('.slot-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
         updateSidebarUI();
         renderResultGrid(current_results, false);
-    }
-
-    function acquireTarget() {
-        if(db_locations.length === 0) return;
-        const roll = db_locations[Math.floor(Math.random() * db_locations.length)];
-        document.getElementById('target-display').innerText = roll;
     }
 
     function toggleReportMode() { document.body.classList.toggle('report-mode'); }
@@ -257,5 +310,6 @@
 </script>
 </body>
 </html>
+
 
 
