@@ -69,9 +69,51 @@
     <div class="cover-content">
         <h1 class="cover-title">危機合約</h1>
         <div class="cover-sub">運氣與實力</div>
+        
+        <div style="margin-top: 40px; position: relative;">
+            <a href="您的_GOOGLE_文件連結" target="_blank" class="guide-link">
+                <span style="letter-spacing: 2px;">>> CONTRACT_GUIDE</span>
+                <br>
+                <span style="font-size: 1.2rem; font-weight: bold;">合約指南</span>
+            </a>
+        </div>
+
         <button class="start-btn" onclick="startSystem()">接受合約</button>
     </div>
 </div>
+
+<style>
+    /* 合約指南專屬樣式 */
+    .guide-link {
+        display: inline-block;
+        color: #666; 
+        text-decoration: none; 
+        transition: all 0.3s ease;
+        padding: 10px 20px;
+        border: 1px solid transparent;
+    }
+    
+    .guide-link:hover {
+        color: var(--ak-cyan);
+        transform: translateY(-2px);
+        text-shadow: 0 0 10px var(--ak-cyan);
+    }
+
+    /* 增加一個裝飾線效果 */
+    .guide-link::after {
+        content: '';
+        display: block;
+        width: 0;
+        height: 1px;
+        background: var(--ak-cyan);
+        transition: width 0.3s;
+        margin: 5px auto 0;
+    }
+
+    .guide-link:hover::after {
+        width: 100%;
+    }
+</style>
 
 <div class="app-wrapper">
     <div class="top-bar">
@@ -323,4 +365,5 @@ function acquireTarget() {
 </script>
 </body>
 </html>
+
 
