@@ -292,6 +292,35 @@
         document.getElementById('back-zone').style.display = 'none';
         renderDifficultyCards();
     }
+    // 確保 HTML 按鈕是這樣寫的：
+// <button onclick="acquireTarget()" ...>ACQUIRE_TARGET</button>
+
+function acquireTarget() {
+    if (db_locations.length === 0) {
+        alert("[PRTS_ERROR] 尚未同步地圖數據庫，請稍後。");
+        return;
+    }
+    
+    // 隨機抽取地圖
+    const roll = db_locations[Math.floor(Math.random() * db_locations.length)];
+    
+    // 更新介面顯示
+    const targetDisplay = document.getElementById('target-display');
+    targetDisplay.innerText = roll.name;
+    targetDisplay.style.color = "var(--ak-cyan)";
+    
+    // 儲存地圖風險值
+    state_map_risk = roll.risk;
+    
+    // 播放一個簡單的閃爍特效
+    targetDisplay.style.animation = "none";
+    targetDisplay.offsetHeight; // 觸發重繪
+    targetDisplay.style.animation = "alert-pulse 0.5s ease-out";
+    
+    // 關鍵：更新側邊欄總分
+    updateSidebarUI();
+    }
 </script>
 </body>
 </html>
+
